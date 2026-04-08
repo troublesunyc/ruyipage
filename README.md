@@ -1170,7 +1170,14 @@ page.extensions.uninstall(ext_id)
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=LoseNine/ruyipage&type=Date)](https://www.star-history.com/#LoseNine/ruyipage&Date)
+<a href="https://www.star-history.com/?repos=LoseNine%2Fruyipage&type=timeline&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=LoseNine/ruyipage&type=timeline&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=LoseNine/ruyipage&type=timeline&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=LoseNine/ruyipage&type=timeline&legend=top-left" />
+ </picture>
+</a>
+
 ---
 
 ## 最后说明
