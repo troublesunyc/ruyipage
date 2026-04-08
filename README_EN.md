@@ -396,6 +396,43 @@ Suitable for:
 - passing fingerprint files, locale, headers, and screen parameters together
 - directly validating fingerprint output on sites such as `browserscan`
 
+### 4. HTTP Proxy Auth Example
+
+If you are using this project's own Firefox kernel, the kernel already supports reading HTTP proxy credentials from `fpfile` automatically.
+
+That means the business-layer code only needs:
+
+- `opts.set_proxy("http://host:port")`
+- `opts.set_fpfile("...")`
+
+When the `fpfile` contains the following fields, the kernel will handle HTTP proxy authentication internally without any extra auth API call:
+
+```text
+httpauth.username:your-proxy-username
+httpauth.password:your-proxy-password
+```
+
+Full example: `examples/38_proxy_auth_ipinfo.py`
+
+Core pattern:
+
+```python
+from ruyipage import FirefoxOptions, FirefoxPage
+
+opts = FirefoxOptions()
+opts.set_proxy("http://your-proxy-host:8080")
+opts.set_fpfile(r"C:\path\to\your\profile1.txt")
+
+page = FirefoxPage(opts)
+page.get("http://ipinfo.io/json")
+```
+
+Suitable for:
+
+- using your own Firefox kernel with `fpfile`-driven HTTP proxy auth
+- keeping business-layer proxy setup minimal
+- keeping proxy usernames and passwords inside `fpfile` instead of hardcoding them in scripts
+
 ---
 
 ## Most Common API Guide

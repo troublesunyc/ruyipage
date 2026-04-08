@@ -16,6 +16,7 @@ import subprocess
 
 from .driver import BrowserBiDiDriver, ContextDriver
 from .._configs.firefox_options import FirefoxOptions
+from .._bidi import network as bidi_network
 from .._bidi import session as bidi_session
 from .._bidi import browsing_context as bidi_context
 from ..errors import BrowserConnectError, BrowserLaunchError
@@ -85,6 +86,8 @@ class Firefox(object):
         self._context_ids_lock = threading.Lock()
         self._auto_profile = None  # 自动创建的临时 profile
         self._quit_lock = threading.Lock()
+        self._proxy_auth_intercept_id = None
+        self._proxy_auth_subscription_id = None
 
         try:
             self._connect_or_launch()
@@ -332,6 +335,7 @@ class Firefox(object):
                 pass
 
             if self._driver:
+                self._teardown_proxy_auth()
                 self._driver.stop()
                 self._driver = None
 
@@ -365,11 +369,13 @@ class Firefox(object):
     def reconnect(self):
         """重新连接"""
         if self._driver:
+            self._teardown_proxy_auth()
             self._driver.stop()
         self._driver = BrowserBiDiDriver(self._address)
         self._driver.start()
         self._create_session()
         self._subscribe_events()
+        self._setup_proxy_auth()
         self._refresh_tabs()
 
     def _connect_or_launch(self):
@@ -518,6 +524,7 @@ class Firefox(object):
             self._driver.start()
             self._create_session()
             self._subscribe_events()
+            self._setup_proxy_auth()
             self._setup_download_behavior()
             self._refresh_tabs()
             logger.info("已连接到 Firefox: %s", self._address)
@@ -536,6 +543,7 @@ class Firefox(object):
             logger.debug("连接失败: %s", e)
             if self._driver:
                 try:
+                    self._teardown_proxy_auth()
                     # 使用 stop() 而非 _stop()，确保清理单例注册
                     # 这样下次 _try_connect 会创建全新的 BrowserBiDiDriver
                     self._driver.stop()
@@ -545,6 +553,86 @@ class Firefox(object):
                         BrowserBiDiDriver._BROWSERS.pop(self._address, None)
                 self._driver = None
             return False
+
+    def _setup_proxy_auth(self):
+        """启用浏览器级代理认证自动应答。"""
+        self._teardown_proxy_auth()
+
+        if not self._driver:
+            return
+
+        if not self._options.proxy:
+            return
+
+        credentials = self._options._get_proxy_auth_credentials()
+        if not credentials:
+            return
+
+        result = bidi_network.add_intercept(self._driver, phases=["authRequired"])
+        self._proxy_auth_intercept_id = result.get("intercept")
+
+        sub = bidi_session.subscribe(self._driver, ["network.authRequired"])
+        self._proxy_auth_subscription_id = sub.get("subscription")
+        self._driver.set_callback("network.authRequired", self._on_proxy_auth_required)
+
+    def _teardown_proxy_auth(self):
+        """清理浏览器级代理认证拦截。"""
+        if self._driver:
+            try:
+                self._driver.remove_callback("network.authRequired")
+            except Exception:
+                pass
+
+            if self._proxy_auth_subscription_id:
+                try:
+                    bidi_session.unsubscribe(
+                        self._driver, subscription=self._proxy_auth_subscription_id
+                    )
+                except Exception:
+                    pass
+
+            if self._proxy_auth_intercept_id:
+                try:
+                    bidi_network.remove_intercept(
+                        self._driver, self._proxy_auth_intercept_id
+                    )
+                except Exception:
+                    pass
+
+        self._proxy_auth_subscription_id = None
+        self._proxy_auth_intercept_id = None
+
+    def _on_proxy_auth_required(self, params):
+        """在代理认证挑战出现时自动提供用户名密码。"""
+        request = params.get("request") or {}
+        request_id = request.get("request") if isinstance(request, dict) else request
+        if not request_id:
+            return
+
+        credentials = self._options._get_proxy_auth_credentials() or {}
+        if not credentials:
+            bidi_network.continue_with_auth(self._driver, request_id, action="default")
+            return
+
+        challenge = params.get("authChallenge") or {}
+        source = str(challenge.get("source") or params.get("source") or "").lower()
+        realm = str(params.get("realm") or challenge.get("realm") or "")
+        is_proxy = source == "proxy" or "proxy" in realm.lower()
+
+        if is_proxy:
+            bidi_network.continue_with_auth(
+                self._driver,
+                request_id,
+                action="provideCredentials",
+                credentials={
+                    "type": "password",
+                    "username": credentials.get("username", ""),
+                    "password": credentials.get("password", ""),
+                },
+            )
+            return
+
+        bidi_network.continue_with_auth(self._driver, request_id, action="default")
 
     def _launch_browser(self):
         """启动 Firefox 进程

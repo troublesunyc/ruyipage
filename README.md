@@ -394,6 +394,43 @@ page.refresh()
 - 希望把指纹文件、语言、请求头、屏幕参数一起带上
 - 想直接验证 `browserscan` 等站点上的指纹表现
 
+### 4. HTTP 密码代理示例
+
+如果你使用的是本项目自己的 Firefox 内核，那么内核已经支持从 `fpfile` 自动读取 HTTP 代理用户名密码。
+
+也就是说，业务层只需要：
+
+- `opts.set_proxy("http://host:port")`
+- `opts.set_fpfile("...")`
+
+当 `fpfile` 中存在以下字段时，内核会自动处理 HTTP 代理认证，不需要再额外调用认证 API：
+
+```text
+httpauth.username:your-proxy-username
+httpauth.password:your-proxy-password
+```
+
+完整示例见：`examples/38_proxy_auth_ipinfo.py`
+
+核心写法：
+
+```python
+from ruyipage import FirefoxOptions, FirefoxPage
+
+opts = FirefoxOptions()
+opts.set_proxy("http://your-proxy-host:8080")
+opts.set_fpfile(r"C:\path\to\your\profile1.txt")
+
+page = FirefoxPage(opts)
+page.get("http://ipinfo.io/json")
+```
+
+适用场景：
+
+- 你在自己的 Firefox 内核里已经实现了 `fpfile` 驱动的 HTTP 代理认证
+- 希望业务层只保留最小代理配置入口
+- 想让代理用户名密码完全留在 `fpfile` 中，而不是写进业务脚本
+
 ---
 
 ## 最常用 API 文档

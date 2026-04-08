@@ -2,6 +2,7 @@
 """Firefox 浏览器启动配置"""
 
 import os
+import re
 import sys
 
 
@@ -414,6 +415,50 @@ class FirefoxOptions(object):
         self._fpfile = path
         return self
 
+    def _get_proxy_auth_credentials(self):
+        """从 fpfile 中读取代理认证用户名密码。"""
+        auth = self._read_httpauth_from_fpfile(self._fpfile)
+        if not auth:
+            return None
+
+        username = auth.get("username")
+        password = auth.get("password")
+        if username is None and password is None:
+            return None
+
+        return {
+            "username": username or "",
+            "password": password or "",
+        }
+
+    def _read_httpauth_from_fpfile(self, path):
+        """从 fpfile 中读取代理认证字段。"""
+        if not path:
+            return {}
+
+        fpfile_path = os.path.abspath(path)
+        if not os.path.exists(fpfile_path):
+            raise FileNotFoundError("fpfile 不存在: {}".format(fpfile_path))
+
+        result = {}
+        pattern = re.compile(
+            r"^\s*(httpauth\.(?:username|password))\s*[:=]\s*(.*?)\s*$"
+        )
+        with open(fpfile_path, "r", encoding="utf-8") as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line or line.startswith("#") or line.startswith("//"):
+                    continue
+                match = pattern.match(line)
+                if not match:
+                    continue
+                key, value = match.groups()
+                if key == "httpauth.username":
+                    result["username"] = value
+                elif key == "httpauth.password":
+                    result["password"] = value
+        return result
+
     def set_window_size(self, width, height):
         """设置浏览器窗口大小
 
@@ -565,6 +610,8 @@ class FirefoxOptions(object):
                 prefs["network.proxy.http_port"] = int(port)
                 prefs["network.proxy.ssl"] = host
                 prefs["network.proxy.ssl_port"] = int(port)
+                prefs.setdefault("signon.autologin.proxy", True)
+                prefs.setdefault("network.auth.subresource-http-auth-allow", 2)
 
         if not prefs:
             return
