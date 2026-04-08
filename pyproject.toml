@@ -8,7 +8,7 @@ version = "1.0.3"
 description = "Firefox 浏览器自动化库，基于 WebDriver BiDi 协议。"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.9"
-license = "MIT"
+license = "BSD-3-Clause"
 authors = [
   { name = "ruyiPage" }
 ]
@@ -27,6 +27,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: BSD License",
   "Topic :: Software Development :: Testing",
   "Topic :: Internet :: WWW/HTTP :: Browsers",
 ]
