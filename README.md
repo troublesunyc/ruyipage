@@ -6,12 +6,13 @@
   <img src="images/ruyipage.png" width="220" alt="ruyiPage logo" />
 </p>
 
-> 基于 **Firefox + WebDriver BiDi** 的下一代浏览器自动化框架。  
-> **不依赖 CDP、无 CDP 暴露面、针对性被检测更少。**  
-> **原生动作可实现大量 `isTrusted` 行为，内置拟人操作能力，专为高风控场景而生。**
-
-> 已支持接管已打开的 **Firefox 指纹浏览器**，包括 ADS / FlowerBrowser 这类会把调试端口改成随机值的场景。
-> 可通过自动探测端口直接接入已有实例，无需手工先找真实端口。
+> **下一代自动化框架**
+>
+> - 自带**过检测火狐内核**
+> - 大量 **`isTrusted`** 原生动作，**无自动化检测点**
+> - 支持 **ADS** 等指纹浏览器**直接自动化接管**
+> - 基于 **Firefox + WebDriver BiDi**
+> - 更适合**高风控场景**
 
 [![PyPI version](https://img.shields.io/pypi/v/ruyiPage.svg)](https://pypi.org/project/ruyiPage/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/ruyiPage)](https://pypi.org/project/ruyiPage/)

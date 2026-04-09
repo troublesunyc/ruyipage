@@ -6,12 +6,13 @@
   <img src="images/ruyipage.png" width="220" alt="ruyiPage logo" />
 </p>
 
-> A next-generation browser automation framework based on **Firefox + WebDriver BiDi**.  
-> **No CDP dependency, no CDP exposure surface, and less targeted detection.**  
-> **Native actions can preserve a large amount of `isTrusted` behavior, with built-in human-like interaction support for high-risk pages.**
-
-> It can now attach to already-open **Firefox fingerprint browsers**, including ADS / FlowerBrowser setups that rewrite the debugging port to a random value.
-> You can auto-detect the live port and connect directly to the running browser instance.
+> **A next-generation automation framework**
+>
+> - Comes with a **detection-resistant Firefox kernel**
+> - A large amount of native **`isTrusted`** actions, with **no automation detection surface**
+> - Supports **direct automated takeover** of fingerprint browsers such as **ADS**
+> - Built on **Firefox + WebDriver BiDi**
+> - Better suited for **high-risk scenarios**
 
 [![PyPI version](https://img.shields.io/pypi/v/ruyiPage.svg)](https://pypi.org/project/ruyiPage/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/ruyiPage)](https://pypi.org/project/ruyiPage/)
