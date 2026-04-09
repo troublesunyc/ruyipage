@@ -20,6 +20,129 @@
 
 ---
 
+## 实战展示
+
+下面这些图放的是实际场景展示。为了在 GitHub 首页里更紧凑，我这里用两列表格展示。
+
+<table>
+  <tr>
+    <td align="center"><b>可直接通过 Cloudflare 5s 盾</b><br><img src="images/cloudfare.jpg" width="320" alt="Cloudflare 5s challenge" /></td>
+    <td align="center"><b>可直接通过 hCaptcha</b><br><img src="images/hcapture.jpg" width="320" alt="hCaptcha" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>可直接通过 DataDome</b><br><img src="images/datadome.jpg" width="320" alt="DataDome" /></td>
+    <td align="center"><b>可直接进入 Outlook Mail</b><br><img src="images/outlook.jpg" width="320" alt="Outlook Mail" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>可直接进入 Google Mail</b><br><img src="images/google.jpg" width="320" alt="Google Mail" /></td>
+    <td align="center"><b>bet365 实战展示</b><br><img src="images/bet365.png" width="320" alt="bet365 Demo" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>指纹浏览器指纹页展示</b><br><img src="images/fingerprint.png" width="320" alt="Fingerprint Browser Demo" /></td>
+    <td align="center"><b>Firefox 路线真实场景能力</b><br>更适合高风控页面、登录流、验证码与真实交互场景</td>
+  </tr>
+</table>
+
+> 这些展示图用于说明 `ruyiPage` 在 Firefox 路线下的真实场景能力。
+> 如果目标站点风控更强，仍建议优先配合本项目推荐的 Firefox 内核方案，或任意可用的火狐指纹浏览器使用。
+
+---
+
+## 安装与使用
+
+### 安装
+
+```bash
+pip install ruyiPage --upgrade
+```
+
+如果你是首次安装，也可以直接用上面的命令获取最新版。
+
+如果你是从源码运行，或给学员分发项目源码，建议同时安装项目依赖：
+
+```bash
+pip install -r requirements.txt
+```
+
+安装后建议先确认：
+
+```bash
+python -c "import ruyipage; print(ruyipage.__version__)"
+```
+
+### 最简单启动
+
+```python
+from ruyipage import FirefoxPage
+
+page = FirefoxPage()
+page.get("https://www.example.com")
+print(page.title)
+page.quit()
+```
+
+### 指定 Firefox 路径和 userdir
+
+```python
+from ruyipage import FirefoxOptions, FirefoxPage
+
+opts = FirefoxOptions()
+opts.set_browser_path(r"D:\Firefox\firefox.exe")
+opts.set_user_dir(r"D:\ruyipage_userdir")
+
+page = FirefoxPage(opts)
+page.get("https://www.example.com")
+print(page.title)
+page.quit()
+```
+
+### 更适合新手的 launch
+
+```python
+from ruyipage import launch
+
+page = launch(
+    browser_path=r"D:\Firefox\firefox.exe",
+    user_dir=r"D:\ruyipage_userdir",
+    headless=False,
+    port=9222,
+)
+
+page.get("https://www.example.com")
+print(page.title)
+page.quit()
+```
+
+### 浏览器路径和 userdir 是什么
+
+#### `browser_path`
+
+Firefox 可执行文件路径。
+
+适合这些情况：
+
+- Firefox 不在默认安装目录
+- 你有多个 Firefox 版本
+- 你用便携版 Firefox
+
+#### `user_dir`
+
+也就是 Firefox 的 profile / 用户目录。
+
+适合这些情况：
+
+- 想复用登录状态
+- 想保留 Cookie / 本地存储
+- 想复用扩展、证书、首选项
+
+如果不设置：
+
+- `ruyiPage` 会自动创建临时 profile
+- 适合一次性测试
+- 关闭后通常会被清理
+
+---
+
 ## 请我喝咖啡
 
 如果这个项目对你有帮助，欢迎请我喝杯咖啡，支持我继续完善 `ruyiPage`。
@@ -182,127 +305,6 @@
 - 你要 **多浏览器统一自动化**：优先 Playwright / Selenium
 - 你主做 **Chromium/CDP**：优先 Puppeteer / Playwright
 - 你想要 **Firefox + 不依赖 CDP + BiDi 高层封装**：`ruyiPage` 是更对路的选择
-
----
-
-## 实战展示
-
-下面这些图放的是实际场景展示。为了在 GitHub 首页里更紧凑，我这里用两列表格展示。
-
-<table>
-  <tr>
-    <td align="center"><b>可直接通过 Cloudflare 5s 盾</b><br><img src="images/cloudfare.jpg" width="320" alt="Cloudflare 5s challenge" /></td>
-    <td align="center"><b>可直接通过 hCaptcha</b><br><img src="images/hcapture.jpg" width="320" alt="hCaptcha" /></td>
-  </tr>
-  <tr>
-    <td align="center"><b>可直接通过 DataDome</b><br><img src="images/datadome.jpg" width="320" alt="DataDome" /></td>
-    <td align="center"><b>可直接进入 Outlook Mail</b><br><img src="images/outlook.jpg" width="320" alt="Outlook Mail" /></td>
-  </tr>
-  <tr>
-    <td align="center"><b>可直接进入 Google Mail</b><br><img src="images/google.jpg" width="320" alt="Google Mail" /></td>
-    <td align="center"><b>指纹浏览器指纹页展示</b><br><img src="images/fingerprint.png" width="320" alt="Fingerprint Browser Demo" /></td>
-  </tr>
-</table>
-
-> 这些展示图用于说明 `ruyiPage` 在 Firefox 路线下的真实场景能力。
-> 如果目标站点风控更强，仍建议优先配合本项目推荐的 Firefox 内核方案，或任意可用的火狐指纹浏览器使用。
-
----
-
-## 安装
-
-```bash
-pip install ruyiPage --upgrade
-```
-
-如果你是首次安装，也可以直接用上面的命令获取最新版。
-
-如果你是从源码运行，或给学员分发项目源码，建议同时安装项目依赖：
-
-```bash
-pip install -r requirements.txt
-```
-
-安装后建议先确认：
-
-```bash
-python -c "import ruyipage; print(ruyipage.__version__)"
-```
-
----
-
-## 基础配置
-
-### 1. 最简单启动
-
-```python
-from ruyipage import FirefoxPage
-
-page = FirefoxPage()
-page.get("https://www.example.com")
-print(page.title)
-page.quit()
-```
-
-### 2. 指定 Firefox 路径和 userdir
-
-```python
-from ruyipage import FirefoxOptions, FirefoxPage
-
-opts = FirefoxOptions()
-opts.set_browser_path(r"D:\Firefox\firefox.exe")
-opts.set_user_dir(r"D:\ruyipage_userdir")
-
-page = FirefoxPage(opts)
-page.get("https://www.example.com")
-print(page.title)
-page.quit()
-```
-
-### 3. 更适合新手的 launch
-
-```python
-from ruyipage import launch
-
-page = launch(
-    browser_path=r"D:\Firefox\firefox.exe",
-    user_dir=r"D:\ruyipage_userdir",
-    headless=False,
-    port=9222,
-)
-
-page.get("https://www.example.com")
-print(page.title)
-page.quit()
-```
-
-### 浏览器路径和 userdir 是什么
-
-#### `browser_path`
-
-Firefox 可执行文件路径。
-
-适合这些情况：
-
-- Firefox 不在默认安装目录
-- 你有多个 Firefox 版本
-- 你用便携版 Firefox
-
-#### `user_dir`
-
-也就是 Firefox 的 profile / 用户目录。
-
-适合这些情况：
-
-- 想复用登录状态
-- 想保留 Cookie / 本地存储
-- 想复用扩展、证书、首选项
-
-如果不设置：
-
-- `ruyiPage` 会自动创建临时 profile
-- 适合一次性测试
-- 关闭后通常会被清理
 
 ---
 
