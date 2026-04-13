@@ -382,6 +382,12 @@ def auto_attach_exist_browser_by_process(
     latest_tab=False,
 ):
     """按进程特征自动探测并接管已打开浏览器。"""
+    candidate_ports = find_candidate_ports_by_process()
+    if not candidate_ports:
+        raise RuntimeError(
+            "未从进程特征中发现 Firefox 调试端口，请确认浏览器已启动并启用 --remote-debugging-port。"
+        )
+
     browsers = find_existing_browsers_by_process(
         host=host,
         timeout=timeout,
@@ -389,9 +395,35 @@ def auto_attach_exist_browser_by_process(
         keep_driver=True,
     )
     if not browsers:
-        raise RuntimeError(
-            "未从进程特征中发现可接管的 Firefox 端口，请确认浏览器已启动。"
-        )
+        occupied_infos = []
+        for port in candidate_ports:
+            info = _probe_bidi_address(
+                "{}:{}".format(host, port),
+                timeout=timeout,
+                keep_driver=False,
+            )
+            if info and info.get("probe_state") == "occupied":
+                occupied_infos.append(info)
+
+        if occupied_infos:
+            detail = "；".join(
+                "{} -> {}{}".format(
+                    item["address"],
+                    item.get("status_message") or "Session already started",
+                    (
+                        " ({})".format(item.get("error_message"))
+                        if item.get("error_message")
+                        else ""
+                    ),
+                )
+                for item in occupied_infos[:3]
+            )
+            raise RuntimeError(
+                "已发现 Firefox 调试端口，但其唯一 BiDi session 已被占用，当前无法接管。"
+                + (" 失败详情: {}".format(detail) if detail else "")
+            )
+
+        raise RuntimeError("已发现候选调试端口，但未检测到可接管的 Firefox BiDi 会话。")
 
     errors = []
     for item in browsers:

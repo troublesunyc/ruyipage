@@ -8,6 +8,7 @@
 import os
 import sys
 import time
+import atexit
 import socket
 import logging
 import tempfile
@@ -51,6 +52,34 @@ def _probe_bidi_address(address, timeout=1.0, keep_driver=False):
     except Exception:
         return None
 
+    def _occupied_result(status_message="", error_message="", ws_url=""):
+        return {
+            "address": address,
+            "host": host,
+            "port": port,
+            "ready": False,
+            "message": status_message,
+            "status_message": status_message,
+            "error_message": error_message,
+            "probe_state": "occupied",
+            "ws_url": ws_url,
+            "driver": None,
+            "session_id": "",
+            "window_count": 0,
+            "tab_count": 0,
+            "client_windows": [],
+            "contexts": [],
+            "session_owned": False,
+        }
+
+    def _release_probe_session(driver_obj, owns_session):
+        if not driver_obj or not owns_session:
+            return
+        try:
+            bidi_session.end(driver_obj)
+        except Exception:
+            pass
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(timeout)
     try:
@@ -64,6 +93,7 @@ def _probe_bidi_address(address, timeout=1.0, keep_driver=False):
         return None
 
     driver = None
+    session_owned = False
     try:
         ws_url = get_bidi_ws_url(host, port, timeout=max(1, timeout))
         driver = BrowserBiDiDriver(address)
@@ -78,9 +108,23 @@ def _probe_bidi_address(address, timeout=1.0, keep_driver=False):
         # "Session already started"，但不会把已有 session 交给新连接复用，
         # 后续任何 browsingContext 命令都会报 invalid session id。
         if not ready:
-            return None
+            return _occupied_result(status_message=message, ws_url=ws_url)
 
-        result = bidi_session.new(driver, {})
+        try:
+            result = bidi_session.new(driver, {})
+            session_owned = True
+        except Exception as e:
+            err_text = str(e)
+            err_lower = err_text.lower()
+            if "maximum number of active sessions" in err_lower or (
+                "session not created" in err_lower and "maximum" in err_lower
+            ):
+                return _occupied_result(
+                    status_message=message,
+                    error_message=err_text,
+                    ws_url=ws_url,
+                )
+            raise
         session_id = result.get("sessionId", "")
         driver.session_id = session_id
         windows = []
@@ -105,6 +149,10 @@ def _probe_bidi_address(address, timeout=1.0, keep_driver=False):
             "session_id": session_id,
             "window_count": len(windows),
             "tab_count": len(contexts),
+            "probe_state": "attachable",
+            "status_message": message,
+            "error_message": "",
+            "session_owned": session_owned,
             "client_windows": windows,
             "contexts": [
                 {
@@ -120,6 +168,7 @@ def _probe_bidi_address(address, timeout=1.0, keep_driver=False):
         return None
     finally:
         if driver and not keep_driver:
+            _release_probe_session(driver, session_owned)
             try:
                 driver.stop()
             except Exception:
@@ -142,6 +191,7 @@ def create_browser_from_probe_info(info):
     browser._driver = driver
     browser._process = None
     browser._session_id = info.get("session_id", "")
+    browser._owns_session = bool(info.get("session_owned"))
     browser._contexts = {}
     browser._context_ids = [
         c.get("context", "") for c in (info.get("contexts") or []) if c.get("context")
@@ -152,6 +202,8 @@ def create_browser_from_probe_info(info):
     browser._proxy_auth_intercept_id = None
     browser._proxy_auth_subscription_id = None
     browser._xpath_picker_last_reinject = {}
+    browser._atexit_registered = False
+    browser._register_exit_cleanup()
     browser._initialized = True
     return browser
 
@@ -187,7 +239,8 @@ def find_existing_browsers(
             except Exception:
                 info = None
             if info:
-                result.append(info)
+                if info.get("probe_state", "attachable") == "attachable":
+                    result.append(info)
 
     result.sort(key=lambda item: int(item.get("port", 0)))
     return result
@@ -296,7 +349,8 @@ def find_existing_browsers_by_process(
                 info = None
             if info:
                 info["scanned_ports"] = sorted(ports)
-                result.append(info)
+                if info.get("probe_state", "attachable") == "attachable":
+                    result.append(info)
 
     result.sort(key=lambda item: int(item.get("port", 0)))
     return result
@@ -433,6 +487,7 @@ class Firefox(object):
         self._driver = None  # type: BrowserBiDiDriver
         self._process = None  # type: subprocess.Popen
         self._session_id = None
+        self._owns_session = False
         self._contexts = {}  # {context_id: FirefoxTab 弱引用信息}
         self._context_ids = []  # 有序的 context ID 列表
         self._context_ids_lock = threading.Lock()
@@ -441,9 +496,11 @@ class Firefox(object):
         self._proxy_auth_intercept_id = None
         self._proxy_auth_subscription_id = None
         self._xpath_picker_last_reinject = {}
+        self._atexit_registered = False
 
         try:
             self._connect_or_launch()
+            self._register_exit_cleanup()
             self._initialized = True
         except Exception:
             # 初始化失败时移除单例，避免后续复用半初始化对象
@@ -689,6 +746,12 @@ class Firefox(object):
 
             if self._driver:
                 self._teardown_proxy_auth()
+                if self._owns_session:
+                    try:
+                        bidi_session.end(self._driver)
+                    except Exception:
+                        pass
+                    self._owns_session = False
                 self._driver.stop()
                 self._driver = None
 
@@ -718,6 +781,31 @@ class Firefox(object):
             with self._lock:
                 self._BROWSERS.pop(self._address, None)
             self._initialized = False
+
+    def _register_exit_cleanup(self):
+        if self._atexit_registered:
+            return
+        atexit.register(self._cleanup_on_exit)
+        self._atexit_registered = True
+
+    def _cleanup_on_exit(self):
+        if not self._driver:
+            return
+        try:
+            self._teardown_proxy_auth()
+        except Exception:
+            pass
+        if self._owns_session:
+            try:
+                bidi_session.end(self._driver)
+            except Exception:
+                pass
+            self._owns_session = False
+        try:
+            self._driver.stop()
+        except Exception:
+            pass
+        self._driver = None
 
     def reconnect(self):
         """重新连接"""
@@ -1082,6 +1170,7 @@ class Firefox(object):
                 )
                 self._session_id = result.get("sessionId", "")
                 self._driver.session_id = self._session_id
+                self._owns_session = True
                 logger.info("BiDi 会话已创建: %s", self._session_id)
                 return
             except Exception as e:
@@ -1106,6 +1195,7 @@ class Firefox(object):
                 )
                 self._session_id = result.get("sessionId", "")
                 self._driver.session_id = self._session_id
+                self._owns_session = True
                 logger.info("BiDi 会话已重新创建: %s", self._session_id)
                 return
             except Exception as e:
@@ -1115,6 +1205,7 @@ class Firefox(object):
                     # 避免把可复用的浏览器误判成必须重启的孤儿会话。
                     self._session_id = ""
                     self._driver.session_id = ""
+                    self._owns_session = False
                     logger.info("检测到已有 Firefox BiDi 会话，直接接管当前浏览器")
                     return
                 raise
