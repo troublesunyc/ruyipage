@@ -108,6 +108,7 @@ class FirefoxBase(BasePage):
         self._driver = ContextDriver(browser.driver, context_id)
         self._load_mode = browser.options.load_mode
         self._maybe_enable_xpath_picker()
+        self._maybe_enable_action_visual()
 
     def _maybe_enable_xpath_picker(self):
         """按启动配置自动启用 XPath picker。"""
@@ -152,8 +153,199 @@ class FirefoxBase(BasePage):
         except Exception as e:
             logger.debug("XPath picker 重新注入失败: %s", e)
 
+    def _maybe_enable_action_visual(self):
+        """按启动配置自动启用鼠标行为可视化。"""
+        options = getattr(self._browser, "options", None)
+        if not options or not getattr(options, "action_visual_enabled", False):
+            return
+
+        try:
+            if not getattr(
+                self._browser, "_action_visual_global_preload_script_id", None
+            ):
+                result = bidi_script.add_preload_script(
+                    self._driver._browser_driver,
+                    self._get_action_visual_script(),
+                )
+                self._browser._action_visual_global_preload_script_id = result.get(
+                    "script", ""
+                )
+            self.run_js(f"({self._get_action_visual_script()})()", as_expr=True)
+        except Exception as e:
+            logger.debug("鼠标行为可视化注入失败: %s", e)
+
+    def _reinject_action_visual_if_needed(self):
+        """在导航完成后重新注入鼠标行为可视化。"""
+        options = getattr(self._browser, "options", None)
+        if not options or not getattr(options, "action_visual_enabled", False):
+            return
+
+        try:
+            self.run_js(f"({self._get_action_visual_script()})()", as_expr=True)
+        except Exception as e:
+            logger.debug("鼠标行为可视化重新注入失败: %s", e)
+
     @staticmethod
-    def _is_expected_navigation_abort(error):
+    def _get_action_visual_script():
+        """鼠标行为可视化调试脚本。"""
+        return r"""(function() {
+    if (typeof window === 'undefined') return;
+    if (window.__ruyiActionVisual__) return;
+
+    var CANVAS_ID = '__ruyi_action_visual_canvas__';
+    var COORD_ID = '__ruyi_action_visual_coord__';
+    var KEYS_ID = '__ruyi_action_visual_keys__';
+    var DOT_ID = '__ruyi_action_visual_dot__';
+
+    // --- cursor dot ---
+    var dot = document.getElementById(DOT_ID);
+    if (!dot) {
+        dot = document.createElement('div');
+        dot.id = DOT_ID;
+        dot.style.cssText = 'position:fixed;width:12px;height:12px;border-radius:50%;' +
+            'background:rgba(255,60,60,0.55);border:2px solid rgba(255,60,60,0.8);' +
+            'pointer-events:none;z-index:2147483646;transform:translate(-50%,-50%);' +
+            'transition:left 0.02s linear,top 0.02s linear;display:none;';
+        document.documentElement.appendChild(dot);
+    }
+
+    // --- coord label ---
+    var coord = document.getElementById(COORD_ID);
+    if (!coord) {
+        coord = document.createElement('div');
+        coord.id = COORD_ID;
+        coord.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483646;' +
+            'font:11px/1.2 monospace;color:#fff;background:rgba(0,0,0,0.6);' +
+            'padding:2px 5px;border-radius:3px;display:none;white-space:nowrap;';
+        document.documentElement.appendChild(coord);
+    }
+
+    // --- keys display ---
+    var keysBox = document.getElementById(KEYS_ID);
+    if (!keysBox) {
+        keysBox = document.createElement('div');
+        keysBox.id = KEYS_ID;
+        keysBox.style.cssText = 'position:fixed;top:10px;right:10px;pointer-events:none;' +
+            'z-index:2147483646;font:14px/1.4 monospace;color:#fff;' +
+            'background:rgba(0,0,0,0.7);padding:4px 10px;border-radius:5px;' +
+            'display:none;max-width:300px;word-break:break-all;';
+        document.documentElement.appendChild(keysBox);
+    }
+
+    // --- canvas ---
+    var canvas = document.getElementById(CANVAS_ID);
+    if (!canvas) {
+        canvas = document.createElement('canvas');
+        canvas.id = CANVAS_ID;
+        canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;' +
+            'pointer-events:none;z-index:2147483645;';
+        document.documentElement.appendChild(canvas);
+    }
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    var ctx = canvas.getContext('2d');
+
+    // --- mouse tracking ---
+    document.addEventListener('mousemove', function(e) {
+        dot.style.left = e.clientX + 'px';
+        dot.style.top = e.clientY + 'px';
+        dot.style.display = 'block';
+        coord.style.left = (e.clientX + 14) + 'px';
+        coord.style.top = (e.clientY + 14) + 'px';
+        coord.textContent = '(' + e.clientX + ', ' + e.clientY + ')';
+        coord.style.display = 'block';
+    }, true);
+
+    // --- API ---
+    var fadeTimers = [];
+
+    window.__ruyiActionVisual__ = {
+        drawPath: function(points) {
+            if (!points || points.length < 2) return;
+            ctx.save();
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            for (var i = 1; i < points.length; i++) {
+                var t = i / (points.length - 1);
+                var r = Math.round(60 + 195 * (1 - t));
+                var g = Math.round(180 * t);
+                var b = Math.round(255 * t);
+                ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',0.7)';
+                ctx.beginPath();
+                ctx.moveTo(points[i-1].x, points[i-1].y);
+                ctx.lineTo(points[i].x, points[i].y);
+                ctx.stroke();
+            }
+            // start dot
+            ctx.fillStyle = 'rgba(60,180,255,0.8)';
+            ctx.beginPath();
+            ctx.arc(points[0].x, points[0].y, 4, 0, Math.PI*2);
+            ctx.fill();
+            // end dot
+            ctx.fillStyle = 'rgba(255,60,60,0.8)';
+            ctx.beginPath();
+            ctx.arc(points[points.length-1].x, points[points.length-1].y, 4, 0, Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+            // fade out after 2s
+            var tid = setTimeout(function() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }, 2000);
+            fadeTimers.push(tid);
+        },
+
+        showClick: function(x, y, button) {
+            var color = button === 2 ? 'rgba(255,60,60,' : button === 1 ? 'rgba(60,60,255,' : 'rgba(60,200,60,';
+            var ring = document.createElement('div');
+            ring.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483647;' +
+                'border:2px solid ' + color + '0.8);border-radius:50%;' +
+                'width:8px;height:8px;left:' + x + 'px;top:' + y + 'px;' +
+                'transform:translate(-50%,-50%);';
+            document.documentElement.appendChild(ring);
+            // crosshair
+            var cross = document.createElement('div');
+            cross.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483647;' +
+                'left:' + (x-8) + 'px;top:' + (y-0.5) + 'px;width:16px;height:1px;' +
+                'background:' + color + '0.6);';
+            var crossV = document.createElement('div');
+            crossV.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483647;' +
+                'left:' + (x-0.5) + 'px;top:' + (y-8) + 'px;width:1px;height:16px;' +
+                'background:' + color + '0.6);';
+            document.documentElement.appendChild(cross);
+            document.documentElement.appendChild(crossV);
+            // expand animation
+            var size = 8;
+            var opacity = 0.8;
+            var interval = setInterval(function() {
+                size += 3;
+                opacity -= 0.04;
+                if (opacity <= 0) {
+                    clearInterval(interval);
+                    ring.remove(); cross.remove(); crossV.remove();
+                    return;
+                }
+                ring.style.width = size + 'px';
+                ring.style.height = size + 'px';
+                ring.style.borderColor = color + opacity + ')';
+            }, 25);
+        },
+
+        showKeys: function(text) {
+            keysBox.textContent = text;
+            keysBox.style.display = 'block';
+            keysBox.style.opacity = '1';
+            if (keysBox._timer) clearTimeout(keysBox._timer);
+            keysBox._timer = setTimeout(function() {
+                keysBox.style.display = 'none';
+            }, 1500);
+        }
+    };
+})"""
         """判断是否为 Firefox 导航被页面主动中断的可预期情况。"""
         if not isinstance(error, BiDiError):
             return False
@@ -1794,6 +1986,7 @@ class FirefoxBase(BasePage):
                 Settings.bidi_timeout = old_timeout
 
         self._reinject_xpath_picker_if_needed()
+        self._reinject_action_visual_if_needed()
         return self
 
     def back(self) -> "FirefoxBase":
@@ -1806,6 +1999,7 @@ class FirefoxBase(BasePage):
             self._driver._browser_driver, self._context_id, -1
         )
         self._reinject_xpath_picker_if_needed()
+        self._reinject_action_visual_if_needed()
         return self
 
     def forward(self) -> "FirefoxBase":
@@ -1816,6 +2010,7 @@ class FirefoxBase(BasePage):
         """
         bidi_context.traverse_history(self._driver._browser_driver, self._context_id, 1)
         self._reinject_xpath_picker_if_needed()
+        self._reinject_action_visual_if_needed()
         return self
 
     def refresh(self, ignore_cache=False) -> "FirefoxBase":
@@ -1842,6 +2037,7 @@ class FirefoxBase(BasePage):
             else:
                 raise
         self._reinject_xpath_picker_if_needed()
+        self._reinject_action_visual_if_needed()
         return self
 
     def stop_loading(self) -> "FirefoxBase":
@@ -1875,6 +2071,7 @@ class FirefoxBase(BasePage):
         state = self.run_js("document.readyState")
         if state in ("interactive", "complete"):
             self._reinject_xpath_picker_if_needed()
+            self._reinject_action_visual_if_needed()
             return self
 
         # 轮询等待
@@ -1883,6 +2080,7 @@ class FirefoxBase(BasePage):
             state = self.run_js("document.readyState")
             if state in ("interactive", "complete"):
                 self._reinject_xpath_picker_if_needed()
+                self._reinject_action_visual_if_needed()
                 return self
             time.sleep(0.1)
 

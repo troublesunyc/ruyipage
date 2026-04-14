@@ -450,6 +450,11 @@ class Actions(object):
         Returns:
             self: 支持链式调用。
         """
+        # 在执行前提取可视化数据
+        visual_data = None
+        if self._is_visual_enabled():
+            visual_data = self._extract_visual_data()
+
         actions = []
 
         if self._pointer_actions:
@@ -482,6 +487,10 @@ class Actions(object):
         self._pointer_actions.clear()
         self._key_actions.clear()
         self._wheel_actions.clear()
+
+        # 执行后触发可视化渲染
+        if visual_data:
+            self._send_visual(visual_data)
 
         return self
 
@@ -874,3 +883,67 @@ class Actions(object):
         ny = dx / dist
         offset = dist * random.uniform(0.3, 0.6) * random.choice([-1, 1])
         return (mx + nx * offset, my + ny * offset)
+
+    # ------------------------------------------------------------------
+    # 行为可视化辅助
+    # ------------------------------------------------------------------
+
+    def _is_visual_enabled(self):
+        """检查是否启用了鼠标行为可视化。"""
+        try:
+            browser = getattr(self._owner, "_browser", None)
+            options = getattr(browser, "options", None)
+            return bool(getattr(options, "action_visual_enabled", False))
+        except Exception:
+            return False
+
+    def _extract_visual_data(self):
+        """从当前动作队列中提取可视化需要的数据。"""
+        data = {"path": [], "clicks": [], "keys": ""}
+        last_x, last_y = self.curr_x, self.curr_y
+
+        for act in self._pointer_actions:
+            t = act.get("type")
+            if t == "pointerMove":
+                x, y = act.get("x", last_x), act.get("y", last_y)
+                data["path"].append({"x": x, "y": y})
+                last_x, last_y = x, y
+            elif t == "pointerDown":
+                data["clicks"].append({"x": last_x, "y": last_y, "button": act.get("button", 0)})
+
+        for act in self._key_actions:
+            t = act.get("type")
+            if t == "keyDown":
+                v = act.get("value", "")
+                if len(v) == 1 and v.isprintable():
+                    data["keys"] += v
+
+        return data
+
+    def _send_visual(self, data):
+        """将可视化数据发送到页面端渲染。"""
+        try:
+            import json
+            js_parts = []
+            if len(data["path"]) >= 2:
+                js_parts.append(
+                    "window.__ruyiActionVisual__&&window.__ruyiActionVisual__.drawPath({})".format(
+                        json.dumps(data["path"])
+                    )
+                )
+            for c in data["clicks"]:
+                js_parts.append(
+                    "window.__ruyiActionVisual__&&window.__ruyiActionVisual__.showClick({},{},{})".format(
+                        c["x"], c["y"], c["button"]
+                    )
+                )
+            if data["keys"]:
+                js_parts.append(
+                    "window.__ruyiActionVisual__&&window.__ruyiActionVisual__.showKeys({})".format(
+                        json.dumps(data["keys"])
+                    )
+                )
+            if js_parts:
+                self._owner.run_js(";".join(js_parts), as_expr=True)
+        except Exception:
+            pass

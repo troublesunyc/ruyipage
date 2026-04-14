@@ -487,6 +487,18 @@ class FirefoxElement(BaseElement):
                 },
             )
 
+            # 行为可视化
+            try:
+                browser = getattr(self._owner, "_browser", None)
+                options = getattr(browser, "options", None)
+                if getattr(options, "action_visual_enabled", False):
+                    self._owner.run_js(
+                        "window.__ruyiActionVisual__&&window.__ruyiActionVisual__.showClick({},{},0)".format(x, y),
+                        as_expr=True,
+                    )
+            except Exception:
+                pass
+
         return self
 
     def right_click(self) -> "FirefoxElement":

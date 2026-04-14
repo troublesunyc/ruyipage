@@ -173,6 +173,7 @@ def launch(
     headless=False,
     private=False,
     xpath_picker=False,
+    action_visual=False,
     port=9222,
     browser_path=None,
     user_dir=None,
@@ -187,6 +188,7 @@ def launch(
         headless: 是否无头
         private: 是否启用 Firefox 私密浏览模式
         xpath_picker: 是否启用页面 XPath 选择浮窗
+        action_visual: 是否启用鼠标行为可视化调试模式
         port: 远程调试端口
         browser_path: Firefox 可执行文件路径。
             适用于 Firefox 安装在非默认目录时。
@@ -210,6 +212,7 @@ def launch(
         headless=headless,
         private=private,
         xpath_picker=xpath_picker,
+        action_visual=action_visual,
         window_size=window_size,
         timeout_base=timeout_base,
         timeout_page_load=timeout_page_load,
