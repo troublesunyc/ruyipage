@@ -25,6 +25,33 @@
 [![GitHub stars](https://img.shields.io/github/stars/LoseNine/ruyipage?style=social)](https://github.com/LoseNine/ruyipage/stargazers)
 [![Downloads](https://static.pepy.tech/badge/ruyipage)](https://pepy.tech/project/ruyipage)
 
+## 请我喝咖啡
+
+如果这个项目对你有帮助，欢迎请我喝杯咖啡，支持我继续完善 `ruyiPage`。
+
+<table>
+  <tr>
+    <td align="center">
+      <b>公众号</b><br>
+      <img src="images/gzh.jpg" width="220" alt="公众号二维码" />
+    </td>
+    <td align="center">
+      <b>QQ 社群</b><br>
+      <img src="images/qq.jpg" width="220" alt="QQ 社群二维码" />
+    </td>
+    <td align="center">
+      <b>联系我 / 个人微信</b><br>
+      <img src="images/weixin.jpg" width="220" alt="个人微信二维码" />
+    </td>
+    <td align="center">
+      <b>请我喝咖啡</b><br>
+      <img src="images/weixingoot.jpg" width="220" alt="收款码" />
+    </td>
+  </tr>
+</table>
+
+---
+
 ## 配套项目
 
 如果你准备把 `ruyiPage` 用在 AI 自动化分析、复杂网页采集或高风控页面场景，建议先看这两个配套项目：
@@ -290,33 +317,6 @@ Firefox 可执行文件路径。
 - `ruyiPage` 会自动创建临时 profile
 - 适合一次性测试
 - 关闭后通常会被清理
-
----
-
-## 请我喝咖啡
-
-如果这个项目对你有帮助，欢迎请我喝杯咖啡，支持我继续完善 `ruyiPage`。
-
-<table>
-  <tr>
-    <td align="center">
-      <b>公众号</b><br>
-      <img src="images/gzh.jpg" width="220" alt="公众号二维码" />
-    </td>
-    <td align="center">
-      <b>QQ 社群</b><br>
-      <img src="images/qq.jpg" width="220" alt="QQ 社群二维码" />
-    </td>
-    <td align="center">
-      <b>联系我 / 个人微信</b><br>
-      <img src="images/weixin.jpg" width="220" alt="个人微信二维码" />
-    </td>
-    <td align="center">
-      <b>请我喝咖啡</b><br>
-      <img src="images/weixingoot.jpg" width="220" alt="收款码" />
-    </td>
-  </tr>
-</table>
 
 ---
 
@@ -1056,7 +1056,99 @@ page.events.stop()
 
 ## 8. 网络能力
 
-高层入口：`page.network`
+高层入口：`page.intercept`（拦截）、`page.listen`（监听）、`page.network`（配置）
+
+### 请求拦截
+
+拦截请求阶段（`beforeRequestSent`），可修改、Mock 或阻止请求：
+
+```python
+# 回调模式：拦截并 Mock 响应
+def handler(req):
+    if '/api/data' in req.url:
+        req.mock(
+            '{"status":"ok","data":"mocked"}',
+            headers={"content-type": "application/json",
+                     "access-control-allow-origin": "*"},
+        )
+    else:
+        req.continue_request()
+
+page.intercept.start_requests(handler)
+page.get("https://example.com")
+page.intercept.stop()
+```
+
+```python
+# 修改请求头（headers 支持 dict 简洁格式）
+def handler(req):
+    req.continue_request(headers={
+        "X-Token": "abc123",
+        "User-Agent": "RuyiPage/1.0",
+    })
+
+page.intercept.start_requests(handler)
+```
+
+```python
+# 阻止请求
+def handler(req):
+    if req.url.endswith(('.png', '.jpg', '.gif')):
+        req.fail()
+    else:
+        req.continue_request()
+
+page.intercept.start_requests(handler)
+```
+
+```python
+# 队列模式：手动处理
+page.intercept.start_requests()
+# ... 触发网络请求 ...
+req = page.intercept.wait(timeout=5)
+print(req.method, req.url, req.body)
+req.continue_request()
+page.intercept.stop()
+```
+
+### 响应拦截
+
+拦截响应阶段（`responseStarted`），可读取、修改响应信息：
+
+```python
+# 读取原始响应状态码和头
+def handler(req):
+    print(f"状态码: {req.response_status}")
+    print(f"Content-Type: {req.response_headers.get('content-type')}")
+    req.continue_response()
+
+page.intercept.start_responses(handler)
+```
+
+```python
+# 修改响应状态码
+def handler(req):
+    if '/api' in req.url:
+        req.continue_response(status_code=200, reason_phrase="OK")
+    else:
+        req.continue_response()
+
+page.intercept.start_responses(handler)
+```
+
+### 一步读取响应体
+
+启用 `collect_response=True` 后，可通过 `req.response_body` 一步读取响应体，无需手动编排 DataCollector：
+
+```python
+page.intercept.start_requests(collect_response=True)
+# ... 触发网络请求 ...
+req = page.intercept.wait(timeout=5)
+req.continue_request()
+body = req.response_body  # 自动等待响应完成 + 解码
+print(body)
+page.intercept.stop()     # 自动清理内部 collector
+```
 
 ### 设置额外请求头
 

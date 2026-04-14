@@ -25,6 +25,33 @@
 [![GitHub stars](https://img.shields.io/github/stars/LoseNine/ruyipage?style=social)](https://github.com/LoseNine/ruyipage/stargazers)
 [![Downloads](https://static.pepy.tech/badge/ruyipage)](https://pepy.tech/project/ruyipage)
 
+## Buy Me a Coffee
+
+If this project helps you, you are welcome to buy me a coffee and support continued work on `ruyiPage`.
+
+<table>
+  <tr>
+    <td align="center">
+      <b>Official Account</b><br>
+      <img src="images/gzh.jpg" width="220" alt="Official account QR code" />
+    </td>
+    <td align="center">
+      <b>QQ Group</b><br>
+      <img src="images/qq.jpg" width="220" alt="QQ group QR code" />
+    </td>
+    <td align="center">
+      <b>Contact Me / WeChat</b><br>
+      <img src="images/weixin.jpg" width="220" alt="Personal WeChat QR code" />
+    </td>
+    <td align="center">
+      <b>Buy Me a Coffee</b><br>
+      <img src="images/weixingoot.jpg" width="220" alt="Donation QR code" />
+    </td>
+  </tr>
+</table>
+
+---
+
 ## Companion Projects
 
 If you plan to use `ruyiPage` for AI-driven automation analysis, advanced web data capture, or high-risk browser workflows, start with these two companion projects:
@@ -290,33 +317,6 @@ If you do not set it:
 - `ruyiPage` will create a temporary profile automatically
 - this is suitable for one-off testing
 - it is usually cleaned up after closing
-
----
-
-## Buy Me a Coffee
-
-If this project helps you, you are welcome to buy me a coffee and support continued work on `ruyiPage`.
-
-<table>
-  <tr>
-    <td align="center">
-      <b>Official Account</b><br>
-      <img src="images/gzh.jpg" width="220" alt="Official account QR code" />
-    </td>
-    <td align="center">
-      <b>QQ Group</b><br>
-      <img src="images/qq.jpg" width="220" alt="QQ group QR code" />
-    </td>
-    <td align="center">
-      <b>Contact Me / WeChat</b><br>
-      <img src="images/weixin.jpg" width="220" alt="Personal WeChat QR code" />
-    </td>
-    <td align="center">
-      <b>Buy Me a Coffee</b><br>
-      <img src="images/weixingoot.jpg" width="220" alt="Donation QR code" />
-    </td>
-  </tr>
-</table>
 
 ---
 
@@ -1023,7 +1023,99 @@ For example:
 
 ## 8. Network Capabilities
 
-High-level entry: `page.network`
+High-level entry: `page.intercept` (interception), `page.listen` (monitoring), `page.network` (configuration)
+
+### Request Interception
+
+Intercept the `beforeRequestSent` phase to modify, mock, or block requests:
+
+```python
+# Callback mode: intercept and mock a response
+def handler(req):
+    if '/api/data' in req.url:
+        req.mock(
+            '{"status":"ok","data":"mocked"}',
+            headers={"content-type": "application/json",
+                     "access-control-allow-origin": "*"},
+        )
+    else:
+        req.continue_request()
+
+page.intercept.start_requests(handler)
+page.get("https://example.com")
+page.intercept.stop()
+```
+
+```python
+# Modify request headers (headers accept a simple dict)
+def handler(req):
+    req.continue_request(headers={
+        "X-Token": "abc123",
+        "User-Agent": "RuyiPage/1.0",
+    })
+
+page.intercept.start_requests(handler)
+```
+
+```python
+# Block requests
+def handler(req):
+    if req.url.endswith(('.png', '.jpg', '.gif')):
+        req.fail()
+    else:
+        req.continue_request()
+
+page.intercept.start_requests(handler)
+```
+
+```python
+# Queue mode: handle manually
+page.intercept.start_requests()
+# ... trigger network requests ...
+req = page.intercept.wait(timeout=5)
+print(req.method, req.url, req.body)
+req.continue_request()
+page.intercept.stop()
+```
+
+### Response Interception
+
+Intercept the `responseStarted` phase to read or modify response info:
+
+```python
+# Read the original response status and headers
+def handler(req):
+    print(f"Status: {req.response_status}")
+    print(f"Content-Type: {req.response_headers.get('content-type')}")
+    req.continue_response()
+
+page.intercept.start_responses(handler)
+```
+
+```python
+# Modify the response status code
+def handler(req):
+    if '/api' in req.url:
+        req.continue_response(status_code=200, reason_phrase="OK")
+    else:
+        req.continue_response()
+
+page.intercept.start_responses(handler)
+```
+
+### Read Response Body in One Step
+
+With `collect_response=True`, use `req.response_body` to read the response body directly — no manual DataCollector needed:
+
+```python
+page.intercept.start_requests(collect_response=True)
+# ... trigger network requests ...
+req = page.intercept.wait(timeout=5)
+req.continue_request()
+body = req.response_body  # auto-waits for response + decodes
+print(body)
+page.intercept.stop()     # auto-cleans internal collector
+```
 
 ### Set extra headers
 
