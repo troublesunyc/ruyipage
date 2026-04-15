@@ -543,6 +543,20 @@ class FirefoxBase(BasePage):
         activeTab: 'info',
         hoverData: null,
         selectedData: null,
+        validation: {
+            relative: null,
+            absolute: null,
+        },
+        group: {
+            sourceKey: null,
+            items: [],
+            commonXPath: '',
+            commonCss: '',
+            anchorName: '',
+            anchorTag: '',
+            diagnostics: [],
+            statusText: '',
+        },
         panel: null,
         watchdogBound: false,
     };
@@ -642,10 +656,18 @@ class FirefoxBase(BasePage):
                 display: grid;
                 gap: 10px;
             }
+            #${PANEL_ID} .ruyi-xpath-picker__inline-actions {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
             #${PANEL_ID} .ruyi-xpath-picker__tabs {
                 display: flex;
                 gap: 8px;
                 margin-bottom: 12px;
+                flex-wrap: wrap;
             }
             #${PANEL_ID} .ruyi-xpath-picker__tab {
                 appearance: none;
@@ -706,6 +728,9 @@ class FirefoxBase(BasePage):
                 background: rgba(15, 23, 42, 0.34);
                 border: 1px solid rgba(148, 163, 184, 0.14);
             }
+            #${PANEL_ID} .ruyi-xpath-picker__field[data-kind="validation"] {
+                border-color: rgba(96, 165, 250, 0.18);
+            }
             #${PANEL_ID} .ruyi-xpath-picker__label {
                 display: block;
                 margin-bottom: 4px;
@@ -724,10 +749,107 @@ class FirefoxBase(BasePage):
                 font-family: Consolas, "SFMono-Regular", monospace;
                 font-size: 11px;
             }
+            #${PANEL_ID} .ruyi-xpath-picker__hint {
+                margin-top: 6px;
+                color: rgba(191, 219, 254, 0.78);
+                font-size: 11px;
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__status-row {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 8px;
+                flex-wrap: wrap;
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__status-chip {
+                display: inline-flex;
+                align-items: center;
+                padding: 3px 8px;
+                border-radius: 999px;
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: 0.02em;
+                white-space: nowrap;
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__status-chip[data-tone="green"] {
+                background: rgba(34, 197, 94, 0.18);
+                color: #dcfce7;
+                border: 1px solid rgba(34, 197, 94, 0.28);
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__status-chip[data-tone="red"] {
+                background: rgba(239, 68, 68, 0.18);
+                color: #fee2e2;
+                border: 1px solid rgba(248, 113, 113, 0.28);
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__status-chip[data-tone="yellow"] {
+                background: rgba(245, 158, 11, 0.18);
+                color: #fef3c7;
+                border: 1px solid rgba(251, 191, 36, 0.28);
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__status-chip[data-tone="blue"] {
+                background: rgba(59, 130, 246, 0.18);
+                color: #dbeafe;
+                border: 1px solid rgba(96, 165, 250, 0.28);
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__group-list {
+                display: grid;
+                gap: 8px;
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__group-item {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 10px;
+                padding: 10px 11px;
+                border-radius: 12px;
+                background: rgba(2, 6, 23, 0.34);
+                border: 1px solid rgba(148, 163, 184, 0.14);
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__group-item-main {
+                min-width: 0;
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__group-item-title {
+                color: #f8fafc;
+                font-weight: 700;
+                margin-bottom: 4px;
+                word-break: break-word;
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__group-item-sub {
+                color: rgba(226, 232, 240, 0.78);
+                font-size: 11px;
+                word-break: break-word;
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__compare-list {
+                display: grid;
+                gap: 10px;
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__compare-item {
+                padding: 10px 11px;
+                border-radius: 12px;
+                background: rgba(2, 6, 23, 0.34);
+                border: 1px solid rgba(148, 163, 184, 0.14);
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__compare-title {
+                color: #f8fafc;
+                font-weight: 700;
+                margin-bottom: 6px;
+            }
+            #${PANEL_ID} .ruyi-xpath-picker__remove {
+                appearance: none;
+                border: 1px solid rgba(248, 113, 113, 0.18);
+                border-radius: 999px;
+                padding: 4px 8px;
+                background: rgba(239, 68, 68, 0.12);
+                color: #fecaca;
+                cursor: pointer;
+                font-size: 10px;
+                font-weight: 800;
+                align-self: start;
+            }
             #${PANEL_ID} .ruyi-xpath-picker__actions {
                 display: flex;
                 gap: 8px;
                 margin-top: 14px;
+                flex-wrap: wrap;
             }
             #${PANEL_ID} .ruyi-xpath-picker__header-actions {
                 display: inline-flex;
@@ -787,6 +909,25 @@ class FirefoxBase(BasePage):
                 pointer-events: none;
                 z-index: 2147483646;
             }
+            #__ruyi_xpath_picker_aux_overlay__ .ruyi-xpath-picker__overlay-box {
+                position: absolute;
+                border: 2px dashed rgba(245, 158, 11, 0.96);
+                border-radius: 12px;
+                pointer-events: none;
+            }
+            #__ruyi_xpath_picker_aux_overlay__ .ruyi-xpath-picker__overlay-tag {
+                position: absolute;
+                top: -10px;
+                left: 8px;
+                padding: 2px 6px;
+                border-radius: 999px;
+                color: #fff;
+                font-size: 10px;
+                font-weight: 800;
+                line-height: 1.2;
+                white-space: nowrap;
+                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.20);
+            }
             @media (max-width: 640px) {
                 #${PANEL_ID} {
                     right: 12px;
@@ -822,18 +963,20 @@ class FirefoxBase(BasePage):
                 <p class="ruyi-xpath-picker__intro" data-role="intro">移动鼠标可预览目标，点击后锁定当前元素。</p>
                 <div class="ruyi-xpath-picker__tabs">
                     <button type="button" class="ruyi-xpath-picker__tab" data-tab="info" data-active="true">Info</button>
-                    <button type="button" class="ruyi-xpath-picker__tab" data-tab="ruyipage" data-active="false">ruyiPage代码生成</button>
+                    <button type="button" class="ruyi-xpath-picker__tab" data-tab="group" data-active="false">元素组</button>
                 </div>
                 <div class="ruyi-xpath-picker__meta" data-role="meta"></div>
                 <div class="ruyi-xpath-picker__actions">
                     <button type="button" class="ruyi-xpath-picker__button ruyi-xpath-picker__button--primary" data-action="unlock" disabled>继续选择</button>
                     <button type="button" class="ruyi-xpath-picker__button ruyi-xpath-picker__button--secondary" data-action="pause">暂停选择</button>
+                    <button type="button" class="ruyi-xpath-picker__button ruyi-xpath-picker__button--secondary" data-action="capture-group" disabled>捕获相似元素</button>
                     <button type="button" class="ruyi-xpath-picker__button ruyi-xpath-picker__button--ghost" data-action="toggle">收起</button>
                 </div>
             `;
             document.documentElement.appendChild(panel);
             const unlockButton = panel.querySelector('[data-action="unlock"]');
             const pauseButton = panel.querySelector('[data-action="pause"]');
+            const captureGroupButton = panel.querySelector('[data-action="capture-group"]');
             const toggleButtons = panel.querySelectorAll('[data-action="toggle"]');
             const tabs = panel.querySelectorAll('[data-tab]');
             if (unlockButton) {
@@ -848,6 +991,13 @@ class FirefoxBase(BasePage):
                     event.preventDefault();
                     event.stopPropagation();
                     togglePaused();
+                });
+            }
+            if (captureGroupButton) {
+                captureGroupButton.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    captureSimilarGroup();
                 });
             }
             toggleButtons.forEach((button) => {
@@ -867,12 +1017,32 @@ class FirefoxBase(BasePage):
             });
             panel.addEventListener('click', (event) => {
                 const copyButton = event.target.closest('[data-copy-value]');
-                if (!copyButton) {
+                if (copyButton) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    copyText(copyButton.getAttribute('data-copy-value') || '', copyButton);
                     return;
                 }
-                event.preventDefault();
-                event.stopPropagation();
-                copyText(copyButton.getAttribute('data-copy-value') || '', copyButton);
+                const validateButton = event.target.closest('[data-validate-kind]');
+                if (validateButton) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    runValidation(validateButton.getAttribute('data-validate-kind') || 'relative');
+                    return;
+                }
+                const removeButton = event.target.closest('[data-remove-group-index]');
+                if (removeButton) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    removeGroupItem(parseInt(removeButton.getAttribute('data-remove-group-index') || '-1', 10));
+                    return;
+                }
+                const clearGroupButton = event.target.closest('[data-clear-group]');
+                if (clearGroupButton) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    clearGroupCapture();
+                }
             });
         }
         state.panel = panel;
@@ -1104,6 +1274,89 @@ class FirefoxBase(BasePage):
         return '';
     }
 
+    function countCssMatches(root, selector) {
+        if (!root || !selector) {
+            return Number.POSITIVE_INFINITY;
+        }
+        try {
+            return root.querySelectorAll(selector).length;
+        } catch (e) {
+            return Number.POSITIVE_INFINITY;
+        }
+    }
+
+    function buildCssSegment(element) {
+        if (!(element instanceof Element)) {
+            return '';
+        }
+        const tagName = element.tagName.toLowerCase();
+        if (element.id) {
+            return `${tagName}#${cssEscapeValue(element.id)}`;
+        }
+        const stableAttrs = ['data-testid', 'data-test', 'data-qa', 'name', 'aria-label', 'placeholder', 'type', 'role', 'title'];
+        for (const attr of stableAttrs) {
+            const rawValue = element.getAttribute(attr);
+            const value = normalizeText(rawValue);
+            if (value) {
+                return `${tagName}[${attr}="${String(rawValue).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"]`;
+            }
+        }
+        const classNames = getCandidateClassNames(element);
+        if (classNames.length) {
+            return `${tagName}${classNames.map((item) => '.' + cssEscapeValue(item)).join('')}`;
+        }
+        if (!element.parentElement) {
+            return tagName;
+        }
+        const siblings = Array.from(element.parentElement.children).filter((child) => child.tagName === element.tagName);
+        const index = siblings.indexOf(element);
+        return siblings.length > 1 ? `${tagName}:nth-of-type(${index + 1})` : tagName;
+    }
+
+    function buildAncestorRelativeCss(element, maxDepth) {
+        const segments = [];
+        let current = element;
+        let depth = 0;
+        const root = getContextRoot(element);
+        while (current && current.nodeType === Node.ELEMENT_NODE && depth < maxDepth) {
+            segments.unshift(buildCssSegment(current));
+            const candidate = segments.join(' > ');
+            if (countCssMatches(root, candidate) === 1) {
+                return candidate;
+            }
+            current = current.parentElement;
+            depth += 1;
+        }
+        return '';
+    }
+
+    function getCssSelector(element) {
+        if (!element || element.nodeType !== Node.ELEMENT_NODE) {
+            return '';
+        }
+        if (element.id) {
+            return `#${cssEscapeValue(element.id)}`;
+        }
+        const root = getContextRoot(element);
+        const stableAttrs = ['data-testid', 'data-test', 'data-qa', 'name', 'aria-label', 'placeholder', 'type', 'role', 'title'];
+        for (const attr of stableAttrs) {
+            const rawValue = element.getAttribute(attr);
+            const value = normalizeText(rawValue);
+            if (!value) {
+                continue;
+            }
+            const candidate = `${element.tagName.toLowerCase()}[${attr}="${String(rawValue).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"]`;
+            if (countCssMatches(root, candidate) === 1) {
+                return candidate;
+            }
+        }
+        const byAncestor = buildAncestorRelativeCss(element, 5);
+        if (byAncestor) {
+            return byAncestor;
+        }
+        return buildCssSegment(element);
+    }
+
     function getAbsoluteXPath(element) {
         if (!element || element.nodeType !== Node.ELEMENT_NODE) {
             return '';
@@ -1156,6 +1409,7 @@ class FirefoxBase(BasePage):
             text: getVisibleText(element),
             absoluteXPath: getAbsoluteXPath(element),
             relativeXPath: getRelativeXPath(element),
+            cssSelector: getCssSelector(element),
             centerX: center.x,
             centerY: center.y,
             context: getElementContext(element),
@@ -1231,6 +1485,1319 @@ class FirefoxBase(BasePage):
             return state.selectedData;
         }
         return state.hoverData;
+    }
+
+    function getElementKey(data) {
+        if (!data) {
+            return '';
+        }
+        return [
+            data.relativeXPath || '',
+            data.absoluteXPath || '',
+            data.centerX || 0,
+            data.centerY || 0,
+            (data.framePath || []).join('>'),
+            (data.shadowPath || []).map((item) => item.selector || '').join('>'),
+        ].join('|');
+    }
+
+    function clearValidationState() {
+        state.validation = {
+            relative: null,
+            absolute: null,
+        };
+        topWindowRef.__ruyiXPathPickerValidationRects__ = [];
+    }
+
+    function clearGroupState() {
+        state.group = {
+            sourceKey: null,
+            items: [],
+            commonXPath: '',
+            commonCss: '',
+            anchorName: '',
+            anchorTag: '',
+            diagnostics: [],
+            statusText: '',
+        };
+        topWindowRef.__ruyiXPathPickerGroupRects__ = [];
+    }
+
+    function setOverlayRects(kind, rects) {
+        const targetKey = kind === 'validation'
+            ? '__ruyiXPathPickerValidationRects__'
+            : '__ruyiXPathPickerGroupRects__';
+        topWindowRef[targetKey] = Array.isArray(rects) ? rects : [];
+    }
+
+    function getOverlayRects(kind) {
+        const targetKey = kind === 'validation'
+            ? '__ruyiXPathPickerValidationRects__'
+            : '__ruyiXPathPickerGroupRects__';
+        const rects = topWindowRef[targetKey];
+        return Array.isArray(rects) ? rects : [];
+    }
+
+    function buildOverlayHtml(rects, tone, prefix) {
+        return rects.map((rect, index) => {
+            const label = prefix ? `${prefix} ${index + 1}` : `${index + 1}`;
+            return `
+                <div class="ruyi-xpath-picker__overlay-box" style="left:${Math.max(rect.left + topWindowRef.scrollX, 0)}px;top:${Math.max(rect.top + topWindowRef.scrollY, 0)}px;width:${Math.max(rect.width || 0, 0)}px;height:${Math.max(rect.height || 0, 0)}px;border-color:${tone.border};background:${tone.fill};box-shadow:0 0 0 1px ${tone.shadow};">
+                    <div class="ruyi-xpath-picker__overlay-tag" style="background:${tone.tag};">${label}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function ensureAuxOverlay() {
+        if (!isTopWindow) {
+            return null;
+        }
+        let overlay = document.getElementById('__ruyi_xpath_picker_aux_overlay__');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = '__ruyi_xpath_picker_aux_overlay__';
+            overlay.style.position = 'absolute';
+            overlay.style.left = '0';
+            overlay.style.top = '0';
+            overlay.style.width = '0';
+            overlay.style.height = '0';
+            overlay.style.pointerEvents = 'none';
+            overlay.style.zIndex = '2147483645';
+            document.documentElement.appendChild(overlay);
+        }
+        return overlay;
+    }
+
+    function syncAuxOverlay() {
+        if (!isTopWindow) {
+            return;
+        }
+        const overlay = ensureAuxOverlay();
+        if (!overlay) {
+            return;
+        }
+        const validationRects = getOverlayRects('validation');
+        const groupRects = getOverlayRects('group');
+        overlay.innerHTML = [
+            buildOverlayHtml(validationRects, {
+                border: 'rgba(245, 158, 11, 0.96)',
+                fill: 'rgba(245, 158, 11, 0.10)',
+                shadow: 'rgba(255, 255, 255, 0.20)',
+                tag: 'rgba(245, 158, 11, 0.92)',
+            }, '命中'),
+            buildOverlayHtml(groupRects, {
+                border: 'rgba(168, 85, 247, 0.96)',
+                fill: 'rgba(168, 85, 247, 0.10)',
+                shadow: 'rgba(255, 255, 255, 0.20)',
+                tag: 'rgba(168, 85, 247, 0.92)',
+            }, '组'),
+        ].join('');
+    }
+
+    function evaluateXPathNodes(doc, expr) {
+        if (!doc || !expr) {
+            return [];
+        }
+        try {
+            const result = doc.evaluate(expr, doc, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+            const nodes = [];
+            let node = result.iterateNext();
+            while (node) {
+                nodes.push(node);
+                node = result.iterateNext();
+            }
+            return nodes;
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function buildValidationResult(label, expr) {
+        const selected = localState.selectedElement;
+        const doc = selected ? selected.ownerDocument : document;
+        const nodes = evaluateXPathNodes(doc, expr).filter((node) => node instanceof Element);
+        const count = nodes.length;
+        const containsSelected = !!(selected && nodes.some((node) => node === selected));
+        let status = 'invalid';
+        let tone = 'red';
+        let message = '未命中任何元素';
+
+        if (count === 1 && containsSelected) {
+            status = 'unique';
+            tone = 'green';
+            message = '唯一命中当前锁定元素';
+        } else if (count === 1) {
+            status = 'shifted';
+            tone = 'blue';
+            message = '唯一命中，但目标已偏移';
+        } else if (count > 1 && containsSelected) {
+            status = 'multiple';
+            tone = 'yellow';
+            message = `命中 ${count} 个元素，包含当前目标`;
+        } else if (count > 1) {
+            status = 'multiple';
+            tone = 'yellow';
+            message = `命中 ${count} 个元素，但未稳定指向当前目标`;
+        }
+
+        return {
+            label,
+            xpath: expr,
+            count,
+            containsSelected,
+            status,
+            tone,
+            message,
+            rects: nodes.map((node) => {
+                const center = getElementCenter(node);
+                return {
+                    left: center.topViewportLeft,
+                    top: center.topViewportTop,
+                    width: center.rect.width,
+                    height: center.rect.height,
+                };
+            }),
+        };
+    }
+
+    function runValidation(kind) {
+        if (state.mode !== 'locked' || !state.selectedData || !localState.selectedElement) {
+            return;
+        }
+        const expr = kind === 'absolute' ? state.selectedData.absoluteXPath : state.selectedData.relativeXPath;
+        if (!expr) {
+            return;
+        }
+        const result = buildValidationResult(kind, expr);
+        state.validation[kind] = result;
+        const allRects = [];
+        ['relative', 'absolute'].forEach((key) => {
+            const item = state.validation[key];
+            if (item && item.count > 1) {
+                allRects.push(...item.rects);
+            }
+        });
+        setOverlayRects('validation', allRects);
+        syncTopUI();
+    }
+
+    function getContextRoot(element) {
+        if (!element) {
+            return document;
+        }
+        const root = typeof element.getRootNode === 'function' ? element.getRootNode() : null;
+        return root instanceof ShadowRoot ? root : element.ownerDocument;
+    }
+
+    function cssEscapeValue(value) {
+        const text = String(value || '');
+        if (window.CSS && typeof window.CSS.escape === 'function') {
+            return window.CSS.escape(text);
+        }
+        return text.replace(/([ #;?%&,.+*~\':"!^$\[\]()=>|\/\\@])/g, '\\$1');
+    }
+
+    function getCandidateClassNames(element) {
+        if (!element || typeof element.className !== 'string') {
+            return [];
+        }
+        return element.className
+            .trim()
+            .split(/\s+/)
+            .filter((item) => item && item.length <= 32 && !/^active|selected|focus|hover|open|close|current|checked|disabled$/.test(item))
+            .slice(0, 2);
+    }
+
+    function isGenericLayoutClass(className) {
+        return /^(grid|row|col|panel|page|layout|container|wrapper|shell|content|main|body|inner|outer)$/i.test(String(className || ''));
+    }
+
+    function getMeaningfulClassNames(element) {
+        return getCandidateClassNames(element).filter((className) => !isGenericLayoutClass(className));
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function queryAllFromRoot(root, selector) {
+        try {
+            return Array.from(root.querySelectorAll(selector));
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function scoreCandidateGroup(elements, selectedElement) {
+        if (!selectedElement || !Array.isArray(elements) || elements.length < 2) {
+            return -1;
+        }
+        const directlyContains = elements.includes(selectedElement);
+        const ancestorContains = !directlyContains && elements.some((item) => item.contains && item.contains(selectedElement));
+        if (!directlyContains && !ancestorContains) {
+            return -1;
+        }
+        const sameTagCount = elements.filter((item) => item.tagName === elements[0].tagName).length;
+        const sameParentCount = elements.filter((item) => item.parentElement === elements[0].parentElement).length;
+        const withTextCount = elements.filter((item) => normalizeText(item.textContent || '')).length;
+        const penalty = elements.length > 50 ? 100 : 0;
+        const sameParentBonus = sameParentCount === elements.length ? 20 : 0;
+        return sameTagCount * 4 + sameParentCount * 6 + withTextCount - elements.length - penalty + sameParentBonus;
+    }
+
+    function buildGroupXPathFromParent(parent, tagName, classNames) {
+        if (!(parent instanceof Element) || !tagName) {
+            return '';
+        }
+        const parentXPath = getRelativeXPath(parent) || getAbsoluteXPath(parent);
+        if (!parentXPath) {
+            return '';
+        }
+        const nodeName = tagName.toLowerCase();
+        if (!classNames.length) {
+            return `${parentXPath}/${nodeName}`;
+        }
+        const classExpr = classNames
+            .map((item) => `contains(concat(' ', normalize-space(@class), ' '), ${escapeXPathLiteral(' ' + item + ' ')})`)
+            .join(' and ');
+        return `${parentXPath}/${nodeName}[${classExpr}]`;
+    }
+
+    function buildGroupCssFromParent(parent, tagName, classNames) {
+        if (!(parent instanceof Element) || !tagName) {
+            return '';
+        }
+        const parentCss = getCssSelector(parent);
+        if (!parentCss) {
+            return '';
+        }
+        const nodeName = tagName.toLowerCase();
+        if (!classNames.length) {
+            return `${parentCss} > ${nodeName}`;
+        }
+        return `${parentCss} > ${nodeName}${classNames.map((item) => '.' + cssEscapeValue(item)).join('')}`;
+    }
+
+    function getAncestorChain(element) {
+        const chain = [];
+        let current = element instanceof Element ? element : null;
+        while (current) {
+            chain.unshift(current);
+            current = current.parentElement;
+        }
+        return chain;
+    }
+
+    function getLowestCommonAncestor(elements) {
+        if (!Array.isArray(elements) || !elements.length) {
+            return null;
+        }
+        const chains = elements.map((item) => getAncestorChain(item));
+        const minLength = Math.min(...chains.map((chain) => chain.length));
+        let lca = null;
+        for (let index = 0; index < minLength; index++) {
+            const candidate = chains[0][index];
+            if (chains.every((chain) => chain[index] === candidate)) {
+                lca = candidate;
+                continue;
+            }
+            break;
+        }
+        return lca;
+    }
+
+    function getDepthFromAncestor(ancestor, element) {
+        let depth = 0;
+        let current = element;
+        while (current && current !== ancestor) {
+            current = current.parentElement;
+            depth += 1;
+        }
+        return current === ancestor ? depth : -1;
+    }
+
+    function getDescendantAtDepth(root, depth, predicate) {
+        if (!(root instanceof Element) || depth < 0) {
+            return [];
+        }
+        let currentLevel = [root];
+        for (let step = 0; step < depth; step++) {
+            currentLevel = currentLevel.flatMap((node) => Array.from(node.children || []));
+            if (!currentLevel.length) {
+                return [];
+            }
+        }
+        return typeof predicate === 'function' ? currentLevel.filter(predicate) : currentLevel;
+    }
+
+    function collectCommonClassNames(elements) {
+        if (!Array.isArray(elements) || !elements.length) {
+            return [];
+        }
+        const classLists = elements.map((item) => getCandidateClassNames(item));
+        return classLists[0].filter((className) => classLists.every((list) => list.includes(className))).slice(0, 2);
+    }
+
+    function buildXPathForSiblingContainers(ancestorXPath, tagName, classNames) {
+        if (!ancestorXPath || !tagName) {
+            return '';
+        }
+        const nodeName = String(tagName).toLowerCase();
+        if (!classNames.length) {
+            return `${ancestorXPath}/${nodeName}`;
+        }
+        const classExpr = classNames
+            .map((item) => `contains(concat(' ', normalize-space(@class), ' '), ${escapeXPathLiteral(' ' + item + ' ')})`)
+            .join(' and ');
+        return `${ancestorXPath}/${nodeName}[${classExpr}]`;
+    }
+
+    function buildCssForSiblingContainers(ancestorCss, tagName, classNames) {
+        if (!ancestorCss || !tagName) {
+            return '';
+        }
+        const nodeName = String(tagName).toLowerCase();
+        if (!classNames.length) {
+            return `${ancestorCss} > ${nodeName}`;
+        }
+        return `${ancestorCss} > ${nodeName}${classNames.map((item) => '.' + cssEscapeValue(item)).join('')}`;
+    }
+
+    function buildStableGroupFromRepeatedAncestors(elements) {
+        if (!Array.isArray(elements) || elements.length < 2) {
+            return { xpath: '', css: '' };
+        }
+        const lca = getLowestCommonAncestor(elements);
+        if (!(lca instanceof Element)) {
+            return { xpath: '', css: '' };
+        }
+
+        const depths = elements.map((item) => getDepthFromAncestor(lca, item));
+        const uniqueDepths = Array.from(new Set(depths.filter((depth) => depth >= 0)));
+        if (uniqueDepths.length !== 1) {
+            return { xpath: '', css: '' };
+        }
+
+        const targetDepth = uniqueDepths[0];
+        for (let containerDepth = Math.max(targetDepth - 1, 0); containerDepth >= 0; containerDepth--) {
+            const candidateContainers = elements.map((item) => {
+                let current = item;
+                let steps = targetDepth - containerDepth;
+                while (current && steps > 0) {
+                    current = current.parentElement;
+                    steps -= 1;
+                }
+                return current;
+            });
+
+            if (candidateContainers.some((item) => !(item instanceof Element))) {
+                continue;
+            }
+
+            const uniqueContainers = Array.from(new Set(candidateContainers));
+            if (uniqueContainers.length !== elements.length) {
+                continue;
+            }
+
+            const tagName = uniqueContainers[0].tagName;
+            if (!uniqueContainers.every((item) => item.tagName === tagName)) {
+                continue;
+            }
+
+            const classNames = collectCommonClassNames(uniqueContainers);
+            const ancestorDepth = containerDepth - 1;
+            const siblingContainers = getDescendantAtDepth(lca, ancestorDepth, (node) => {
+                if (!(node instanceof Element)) {
+                    return false;
+                }
+                if (node.tagName !== tagName) {
+                    return false;
+                }
+                return classNames.every((className) => node.classList && node.classList.contains(className));
+            });
+
+            if (siblingContainers.length !== elements.length || !hasExactElementSet(siblingContainers, uniqueContainers)) {
+                continue;
+            }
+
+            const lcaXPath = getRelativeXPath(lca) || getAbsoluteXPath(lca);
+            const lcaCss = getCssSelector(lca);
+            const xpath = buildXPathForSiblingContainers(lcaXPath, tagName, classNames);
+            const css = buildCssForSiblingContainers(lcaCss, tagName, classNames);
+            return { xpath, css };
+        }
+
+        return { xpath: '', css: '' };
+    }
+
+    function hasExactElementSet(nodes, elements) {
+        if (!Array.isArray(nodes) || !Array.isArray(elements) || nodes.length !== elements.length) {
+            return false;
+        }
+        return elements.every((item) => nodes.includes(item));
+    }
+
+    function normalizeXPathSegment(segment) {
+        return String(segment || '').replace(/\[\d+\]$/, '');
+    }
+
+    function splitXPathSegments(path) {
+        return String(path || '').split('/').filter(Boolean);
+    }
+
+    function buildXPathCandidateFromSegments(segmentLists) {
+        if (!segmentLists.length) {
+            return '';
+        }
+        const minLength = Math.min(...segmentLists.map((segments) => segments.length));
+        if (!Number.isFinite(minLength) || minLength <= 0) {
+            return '';
+        }
+
+        for (let diffIndex = 0; diffIndex < minLength; diffIndex++) {
+            const normalized = normalizeXPathSegment(segmentLists[0][diffIndex]);
+            if (!normalized) {
+                continue;
+            }
+            const sameNodeKind = segmentLists.every((segments) => normalizeXPathSegment(segments[diffIndex]) === normalized);
+            if (!sameNodeKind) {
+                continue;
+            }
+            const prefixSame = segmentLists.every((segments) =>
+                segments.slice(0, diffIndex).every((segment, idx) => segment === segmentLists[0][idx])
+            );
+            const suffixSame = segmentLists.every((segments) =>
+                segments.slice(diffIndex + 1).every((segment, idx) => segment === segmentLists[0][diffIndex + 1 + idx])
+            );
+            const hasVariation = segmentLists.some((segments) => segments[diffIndex] !== segmentLists[0][diffIndex]);
+            if (!prefixSame || !suffixSame || !hasVariation) {
+                continue;
+            }
+            const candidate = [''].concat(
+                segmentLists[0].slice(0, diffIndex),
+                [normalized],
+                segmentLists[0].slice(diffIndex + 1)
+            ).join('/');
+            if (candidate) {
+                return candidate;
+            }
+        }
+
+        const commonPrefix = [];
+        for (let index = 0; index < minLength - 1; index++) {
+            const segment = segmentLists[0][index];
+            if (segmentLists.every((segments) => segments[index] === segment)) {
+                commonPrefix.push(segment);
+                continue;
+            }
+            break;
+        }
+        const nextSegments = segmentLists.map((segments) => normalizeXPathSegment(segments[commonPrefix.length] || ''));
+        const uniqueNext = Array.from(new Set(nextSegments.filter(Boolean)));
+        if (commonPrefix.length && uniqueNext.length === 1) {
+            return [''].concat(commonPrefix, [uniqueNext[0]]).join('/');
+        }
+        return '';
+    }
+
+    function normalizeCssSegment(segment) {
+        return String(segment || '').replace(/:nth-of-type\(\d+\)/g, '').trim();
+    }
+
+    function splitCssSegments(selector) {
+        return String(selector || '').split(/\s*>\s*/).map((item) => item.trim()).filter(Boolean);
+    }
+
+    function buildCssCandidateFromSegments(segmentLists) {
+        if (!segmentLists.length) {
+            return '';
+        }
+        const minLength = Math.min(...segmentLists.map((segments) => segments.length));
+        if (!Number.isFinite(minLength) || minLength <= 0) {
+            return '';
+        }
+
+        for (let diffIndex = 0; diffIndex < minLength; diffIndex++) {
+            const normalized = normalizeCssSegment(segmentLists[0][diffIndex]);
+            if (!normalized) {
+                continue;
+            }
+            const sameNodeKind = segmentLists.every((segments) => normalizeCssSegment(segments[diffIndex]) === normalized);
+            if (!sameNodeKind) {
+                continue;
+            }
+            const prefixSame = segmentLists.every((segments) =>
+                segments.slice(0, diffIndex).every((segment, idx) => segment === segmentLists[0][idx])
+            );
+            const suffixSame = segmentLists.every((segments) =>
+                segments.slice(diffIndex + 1).every((segment, idx) => segment === segmentLists[0][diffIndex + 1 + idx])
+            );
+            const hasVariation = segmentLists.some((segments) => segments[diffIndex] !== segmentLists[0][diffIndex]);
+            if (!prefixSame || !suffixSame || !hasVariation) {
+                continue;
+            }
+            return segmentLists[0].slice(0, diffIndex).concat([normalized], segmentLists[0].slice(diffIndex + 1)).join(' > ');
+        }
+
+        const commonPrefix = [];
+        for (let index = 0; index < minLength - 1; index++) {
+            const segment = segmentLists[0][index];
+            if (segmentLists.every((segments) => segments[index] === segment)) {
+                commonPrefix.push(segment);
+                continue;
+            }
+            break;
+        }
+        const nextSegments = segmentLists.map((segments) => normalizeCssSegment(segments[commonPrefix.length] || ''));
+        const uniqueNext = Array.from(new Set(nextSegments.filter(Boolean)));
+        if (commonPrefix.length && uniqueNext.length === 1) {
+            return commonPrefix.concat([uniqueNext[0]]).join(' > ');
+        }
+        return '';
+    }
+
+    function tryXPathCandidate(expr, elements, doc) {
+        if (!expr) {
+            return false;
+        }
+        try {
+            const nodes = evaluateXPathNodes(doc, expr).filter((node) => node instanceof Element);
+            return hasExactElementSet(nodes, elements);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function tryCssCandidate(selector, elements, root) {
+        if (!selector) {
+            return false;
+        }
+        try {
+            const nodes = queryAllFromRoot(root, selector).filter((node) => node instanceof Element);
+            return hasExactElementSet(nodes, elements);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function getSharedGroupAttributes(elements) {
+        const sharedAttrs = ['data-group', 'data-list', 'data-type', 'role'];
+        return sharedAttrs.map((attr) => {
+            const values = elements.map((item) => item.getAttribute(attr)).filter(Boolean);
+            const uniqueValues = Array.from(new Set(values));
+            if (uniqueValues.length === 1 && values.length === elements.length) {
+                return { attr, value: uniqueValues[0] };
+            }
+            return null;
+        }).filter(Boolean);
+    }
+
+    function buildXPathCandidateResult(expr, elements, doc, strategy) {
+        if (!expr) {
+            return null;
+        }
+        const nodes = evaluateXPathNodes(doc, expr).filter((node) => node instanceof Element);
+        return {
+            kind: 'xpath',
+            strategy,
+            selector: expr,
+            count: nodes.length,
+            exact: hasExactElementSet(nodes, elements),
+        };
+    }
+
+    function buildCssCandidateResult(selector, elements, root, strategy) {
+        if (!selector) {
+            return null;
+        }
+        const nodes = queryAllFromRoot(root, selector).filter((node) => node instanceof Element);
+        return {
+            kind: 'css',
+            strategy,
+            selector,
+            count: nodes.length,
+            exact: hasExactElementSet(nodes, elements),
+        };
+    }
+
+    function buildCommonGroupXPathResult(elements) {
+        if (!Array.isArray(elements) || elements.length < 2) {
+            return { value: '', diagnostics: [] };
+        }
+        const doc = elements[0].ownerDocument;
+        const diagnostics = [];
+
+        const allSameParent = elements.every((item) => item.parentElement === elements[0].parentElement);
+        if (allSameParent && elements[0].parentElement) {
+            const sharedParent = elements[0].parentElement;
+            const sharedTag = elements[0].tagName;
+            const sharedClassNames = collectCommonClassNames(elements);
+            const parentXPath = getRelativeXPath(sharedParent) || getAbsoluteXPath(sharedParent);
+
+            if (parentXPath) {
+                const nodeName = sharedTag.toLowerCase();
+
+                for (const item of getSharedGroupAttributes(elements)) {
+                    const candidate = `${parentXPath}/${nodeName}[@${item.attr}=${escapeXPathLiteral(item.value)}]`;
+                    const result = buildXPathCandidateResult(candidate, elements, doc, `same-parent + @${item.attr}`);
+                    if (result) {
+                        diagnostics.push(result);
+                        if (result.exact) {
+                            return { value: candidate, diagnostics };
+                        }
+                    }
+                }
+
+                if (sharedClassNames.length) {
+                    const classExpr = sharedClassNames
+                        .map((item) => `contains(concat(' ', normalize-space(@class), ' '), ${escapeXPathLiteral(' ' + item + ' ')})`)
+                        .join(' and ');
+                    const candidate = `${parentXPath}/${nodeName}[${classExpr}]`;
+                    const result = buildXPathCandidateResult(candidate, elements, doc, 'same-parent + shared class');
+                    if (result) {
+                        diagnostics.push(result);
+                        if (result.exact) {
+                            return { value: candidate, diagnostics };
+                        }
+                    }
+                }
+
+                const candidateTagOnly = `${parentXPath}/${nodeName}`;
+                const tagOnlyResult = buildXPathCandidateResult(candidateTagOnly, elements, doc, 'same-parent + tag only');
+                if (tagOnlyResult) {
+                    diagnostics.push(tagOnlyResult);
+                    if (tagOnlyResult.exact) {
+                        return { value: candidateTagOnly, diagnostics };
+                    }
+                }
+            }
+        }
+
+        const repeatedAncestorResult = buildStableGroupFromRepeatedAncestors(elements);
+        if (repeatedAncestorResult.xpath) {
+            const repeatedResult = buildXPathCandidateResult(repeatedAncestorResult.xpath, elements, doc, 'repeated ancestor');
+            if (repeatedResult) {
+                diagnostics.push(repeatedResult);
+                if (repeatedResult.exact) {
+                    return { value: repeatedAncestorResult.xpath, diagnostics };
+                }
+            }
+        }
+
+        const absoluteSegments = elements
+            .map((item) => splitXPathSegments(getAbsoluteXPath(item)))
+            .filter((segments) => segments.length);
+        if (absoluteSegments.length === elements.length) {
+            const aggregated = buildXPathCandidateFromSegments(absoluteSegments);
+            const aggregatedResult = buildXPathCandidateResult(aggregated, elements, doc, 'aggregated absolute segments');
+            if (aggregatedResult) {
+                diagnostics.push(aggregatedResult);
+                if (aggregatedResult.exact) {
+                    return { value: aggregated, diagnostics };
+                }
+            }
+        }
+
+        return { value: '', diagnostics };
+    }
+
+    function buildCommonGroupCssResult(elements) {
+        if (!Array.isArray(elements) || elements.length < 2) {
+            return { value: '', diagnostics: [] };
+        }
+        const root = getContextRoot(elements[0]);
+        const diagnostics = [];
+
+        const allSameParent = elements.every((item) => item.parentElement === elements[0].parentElement);
+        if (allSameParent && elements[0].parentElement) {
+            const sharedParent = elements[0].parentElement;
+            const sharedTag = elements[0].tagName.toLowerCase();
+            const sharedClassNames = collectCommonClassNames(elements);
+            const parentCss = getCssSelector(sharedParent);
+
+            if (parentCss) {
+                for (const item of getSharedGroupAttributes(elements)) {
+                    const candidate = `${parentCss} > ${sharedTag}[${item.attr}="${String(item.value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"]`;
+                    const result = buildCssCandidateResult(candidate, elements, root, `same-parent + @${item.attr}`);
+                    if (result) {
+                        diagnostics.push(result);
+                        if (result.exact) {
+                            return { value: candidate, diagnostics };
+                        }
+                    }
+                }
+
+                if (sharedClassNames.length) {
+                    const candidate = `${parentCss} > ${sharedTag}${sharedClassNames.map((item) => '.' + cssEscapeValue(item)).join('')}`;
+                    const result = buildCssCandidateResult(candidate, elements, root, 'same-parent + shared class');
+                    if (result) {
+                        diagnostics.push(result);
+                        if (result.exact) {
+                            return { value: candidate, diagnostics };
+                        }
+                    }
+                }
+
+                const candidateTagOnly = `${parentCss} > ${sharedTag}`;
+                const tagOnlyResult = buildCssCandidateResult(candidateTagOnly, elements, root, 'same-parent + tag only');
+                if (tagOnlyResult) {
+                    diagnostics.push(tagOnlyResult);
+                    if (tagOnlyResult.exact) {
+                        return { value: candidateTagOnly, diagnostics };
+                    }
+                }
+            }
+        }
+
+        const repeatedAncestorResult = buildStableGroupFromRepeatedAncestors(elements);
+        if (repeatedAncestorResult.css) {
+            const repeatedResult = buildCssCandidateResult(repeatedAncestorResult.css, elements, root, 'repeated ancestor');
+            if (repeatedResult) {
+                diagnostics.push(repeatedResult);
+                if (repeatedResult.exact) {
+                    return { value: repeatedAncestorResult.css, diagnostics };
+                }
+            }
+        }
+
+        const cssSegments = elements
+            .map((item) => splitCssSegments(getCssSelector(item)))
+            .filter((segments) => segments.length);
+        if (cssSegments.length === elements.length) {
+            const aggregated = buildCssCandidateFromSegments(cssSegments);
+            const aggregatedResult = buildCssCandidateResult(aggregated, elements, root, 'aggregated css segments');
+            if (aggregatedResult) {
+                diagnostics.push(aggregatedResult);
+                if (aggregatedResult.exact) {
+                    return { value: aggregated, diagnostics };
+                }
+            }
+        }
+
+        return { value: '', diagnostics };
+    }
+
+    function buildCommonGroupXPathFromElements(elements) {
+        return buildCommonGroupXPathResult(elements).value;
+    }
+
+    function buildCommonGroupCssFromElements(elements) {
+        return buildCommonGroupCssResult(elements).value;
+    }
+
+    function collectAnchorSiblingGroup(anchorElement) {
+        if (!(anchorElement instanceof Element) || !(anchorElement.parentElement instanceof Element)) {
+            return { elements: [], strategy: '' };
+        }
+        const parent = anchorElement.parentElement;
+        const tagName = anchorElement.tagName;
+        const sharedAttrs = ['data-group', 'data-list', 'data-type', 'role'];
+
+        for (const attr of sharedAttrs) {
+            const value = anchorElement.getAttribute(attr);
+            if (!value) {
+                continue;
+            }
+            const matches = Array.from(parent.children).filter((child) => child.tagName === tagName && child.getAttribute(attr) === value);
+            if (matches.length >= 2) {
+                return { elements: matches, strategy: `attr:${attr}` };
+            }
+        }
+
+        const classNames = getMeaningfulClassNames(anchorElement);
+        if (classNames.length) {
+            const matches = Array.from(parent.children).filter((child) => {
+                if (child.tagName !== tagName) {
+                    return false;
+                }
+                return classNames.every((className) => child.classList && child.classList.contains(className));
+            });
+            if (matches.length >= 2) {
+                return { elements: matches, strategy: 'class' };
+            }
+        }
+
+        if (getCandidateClassNames(anchorElement).length) {
+            return { elements: [], strategy: '' };
+        }
+
+        const tagOnlyMatches = Array.from(parent.children).filter((child) => child.tagName === tagName);
+        return tagOnlyMatches.length >= 2
+            ? { elements: tagOnlyMatches, strategy: 'tag' }
+            : { elements: [], strategy: '' };
+    }
+
+    function collectAnchorSiblingElements(anchorElement) {
+        return collectAnchorSiblingGroup(anchorElement).elements;
+    }
+
+    function getAnchorTagBonus(tagName) {
+        const tag = String(tagName || '').toLowerCase();
+        if (tag === 'tr') {
+            return 24;
+        }
+        if (tag === 'li') {
+            return 20;
+        }
+        if (tag === 'article') {
+            return 18;
+        }
+        if (tag === 'section') {
+            return 8;
+        }
+        if (tag === 'td' || tag === 'th') {
+            return -18;
+        }
+        return 0;
+    }
+
+    function resolveGroupAnchorElement(selectedElement) {
+        if (!(selectedElement instanceof Element)) {
+            return null;
+        }
+        let bestAnchor = null;
+        let bestScore = -1;
+        let current = selectedElement;
+
+        for (let depth = 0; current && depth <= 5; depth++, current = current.parentElement) {
+            const candidate = collectAnchorSiblingGroup(current);
+            const matches = candidate.elements;
+            if (matches.length < 2 || !matches.includes(current)) {
+                continue;
+            }
+            const sameParentBonus = matches.every((item) => item.parentElement === current.parentElement) ? 20 : 0;
+            const attrBonus = getSharedGroupAttributes(matches).length ? 30 : 0;
+            const classBonus = collectCommonClassNames(matches).filter((className) => !isGenericLayoutClass(className)).length ? 20 : 0;
+            const strategyBonus = candidate.strategy.startsWith('attr:') ? 16 : candidate.strategy === 'class' ? 10 : 0;
+            const tagBonus = getAnchorTagBonus(current.tagName);
+            const sizePenalty = matches.length > 8 ? (matches.length - 8) * 4 : 0;
+            const score = matches.length * 10 + sameParentBonus + attrBonus + classBonus + strategyBonus + tagBonus - depth * 20 - sizePenalty;
+            if (score > bestScore) {
+                bestScore = score;
+                bestAnchor = current;
+            }
+        }
+
+        return bestAnchor;
+    }
+
+    function collectGroupElementsFromAnchor(anchorElement) {
+        if (!(anchorElement instanceof Element)) {
+            return [];
+        }
+        const directMatches = collectAnchorSiblingElements(anchorElement);
+        if (directMatches.length >= 2) {
+            return directMatches;
+        }
+        return inferSimilarElements(anchorElement);
+    }
+
+    function buildGroupDiagnostics(selectedElement, anchorElement, elements, xpathResult, cssResult) {
+        const diagnostics = [];
+        diagnostics.push({
+            kind: 'meta',
+            strategy: 'selected element',
+            selector: getElementName(selectedElement),
+            count: 1,
+            exact: true,
+        });
+        diagnostics.push({
+            kind: 'meta',
+            strategy: 'resolved anchor',
+            selector: anchorElement ? getElementName(anchorElement) : '未找到组锚点',
+            count: Array.isArray(elements) ? elements.length : 0,
+            exact: !!anchorElement,
+        });
+        return diagnostics
+            .concat(xpathResult && Array.isArray(xpathResult.diagnostics) ? xpathResult.diagnostics : [])
+            .concat(cssResult && Array.isArray(cssResult.diagnostics) ? cssResult.diagnostics : []);
+    }
+
+    function hydrateGroupElementsFromItems(items) {
+        if (!Array.isArray(items) || !items.length) {
+            return [];
+        }
+        const elements = [];
+        items.forEach((item) => {
+            const relativeXPath = item && item.relativeXPath;
+            const absoluteXPath = item && item.absoluteXPath;
+            const expr = relativeXPath || absoluteXPath;
+            if (!expr) {
+                return;
+            }
+            const nodes = evaluateXPathNodes(document, expr).filter((node) => node instanceof Element);
+            if (nodes.length === 1) {
+                elements.push(nodes[0]);
+            }
+        });
+        return Array.from(new Set(elements));
+    }
+
+    function inferSimilarElements(selectedElement) {
+        if (!(selectedElement instanceof Element)) {
+            return [];
+        }
+        const root = getContextRoot(selectedElement);
+        const classNames = getCandidateClassNames(selectedElement);
+        const tagName = selectedElement.tagName.toLowerCase();
+        const candidates = [];
+
+        let ancestor = selectedElement.parentElement;
+        let depth = 0;
+        while (ancestor && depth < 3) {
+            if (ancestor instanceof Element) {
+                const directTagMatches = Array.from(ancestor.children).filter((child) => child.tagName === selectedElement.tagName);
+                if (directTagMatches.length >= 2) {
+                    candidates.push(directTagMatches);
+                }
+                if (classNames.length) {
+                    const selector = `${tagName}${classNames.map((item) => '.' + cssEscapeValue(item)).join('')}`;
+                    const directClassMatches = Array.from(ancestor.children).filter((child) => child.matches && child.matches(selector));
+                    if (directClassMatches.length >= 2) {
+                        candidates.push(directClassMatches);
+                    }
+                }
+                if (ancestor.parentElement) {
+                    const parentTag = ancestor.tagName.toLowerCase();
+                    const selector = `${parentTag} > ${tagName}`;
+                    const nestedMatches = queryAllFromRoot(ancestor.parentElement, selector);
+                    if (nestedMatches.length >= 2) {
+                        candidates.push(nestedMatches);
+                    }
+                }
+
+                const ancestorClassNames = getCandidateClassNames(ancestor);
+                if (ancestor.parentElement) {
+                    const grandparent = ancestor.parentElement;
+                    const ancestorTag = ancestor.tagName;
+                    const siblingContainers = Array.from(grandparent.children).filter((child) => {
+                        if (child.tagName !== ancestorTag) {
+                            return false;
+                        }
+                        return ancestorClassNames.every((cn) => child.classList && child.classList.contains(cn));
+                    });
+                    if (siblingContainers.length >= 2 && siblingContainers.includes(ancestor)) {
+                        candidates.push(siblingContainers);
+                    }
+                }
+            }
+            ancestor = ancestor.parentElement;
+            depth += 1;
+        }
+
+        if (root && root !== document && classNames.length) {
+            const selector = `${tagName}${classNames.map((item) => '.' + cssEscapeValue(item)).join('')}`;
+            const shadowMatches = queryAllFromRoot(root, selector);
+            if (shadowMatches.length >= 2) {
+                candidates.push(shadowMatches);
+            }
+        }
+
+        let best = [];
+        let bestScore = -1;
+        candidates.forEach((items) => {
+            const deduped = Array.from(new Set(items)).filter((item) => item instanceof Element);
+            const score = scoreCandidateGroup(deduped, selectedElement);
+            if (score > bestScore) {
+                bestScore = score;
+                best = deduped;
+            }
+        });
+
+        if (best.length >= 2) {
+            const allSameParent = best.every((item) => item.parentElement === best[0].parentElement);
+            if (allSameParent) {
+                return best;
+            }
+        }
+
+        if (best.length >= 2) {
+            const lca = getLowestCommonAncestor(best);
+            if (lca instanceof Element) {
+                const depths = best.map((item) => getDepthFromAncestor(lca, item));
+                const uniqueDepths = Array.from(new Set(depths.filter((d) => d >= 0)));
+                if (uniqueDepths.length === 1 && uniqueDepths[0] >= 1) {
+                    const containerDepthFromLca = uniqueDepths[0] - 1;
+                    const containerElements = best.map((item) => {
+                        let current = item;
+                        for (let step = 0; step < 1; step++) {
+                            if (current && current.parentElement && current.parentElement !== lca) {
+                                current = current.parentElement;
+                            }
+                        }
+                        return current;
+                    });
+
+                    let containers = best;
+                    for (let level = 0; level < uniqueDepths[0] - 1; level++) {
+                        const parents = containers.map((item) => item.parentElement).filter((item) => item instanceof Element);
+                        const uniqueParents = Array.from(new Set(parents));
+                        if (uniqueParents.length === containers.length) {
+                            const parentsSameParent = uniqueParents.every((item) => item.parentElement === uniqueParents[0].parentElement);
+                            if (parentsSameParent) {
+                                containers = uniqueParents;
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+
+                    const containersSameParent = containers.every((item) => item.parentElement === containers[0].parentElement);
+                    if (containersSameParent && containers.length === best.length) {
+                        const containerTag = containers[0].tagName;
+                        const allSameTag = containers.every((item) => item.tagName === containerTag);
+                        if (allSameTag) {
+                            return containers;
+                        }
+                    }
+                }
+            }
+        }
+
+        return best;
+    }
+
+    function updateGroupStateFromElements(elements, selectedElement, anchorElement, statusText) {
+        const safeItems = Array.from(new Set(elements)).filter((item) => item instanceof Element);
+        const payloads = safeItems.map((item) => collectElementData(item));
+        const xpathResult = buildCommonGroupXPathResult(safeItems);
+        const cssResult = buildCommonGroupCssResult(safeItems);
+        state.group = {
+            sourceKey: getElementKey(state.selectedData),
+            items: payloads,
+            commonXPath: xpathResult.value,
+            commonCss: cssResult.value,
+            anchorName: anchorElement ? getElementName(anchorElement) : '',
+            anchorTag: anchorElement && anchorElement.tagName ? anchorElement.tagName.toLowerCase() : '',
+            diagnostics: buildGroupDiagnostics(selectedElement, anchorElement, safeItems, xpathResult, cssResult),
+            statusText: statusText || '',
+        };
+        setOverlayRects('group', payloads.map((item) => ({
+            left: item.topViewportLeft,
+            top: item.topViewportTop,
+            width: item.width,
+            height: item.height,
+        })));
+    }
+
+    function captureSimilarGroup() {
+        if (state.mode !== 'locked' || !localState.selectedElement || !state.selectedData) {
+            return;
+        }
+        const anchorElement = resolveGroupAnchorElement(localState.selectedElement);
+        const matches = collectGroupElementsFromAnchor(anchorElement || localState.selectedElement);
+        if (matches.length < 2) {
+            clearGroupState();
+            state.group.sourceKey = getElementKey(state.selectedData);
+            state.group.anchorName = anchorElement ? getElementName(anchorElement) : '';
+            state.group.anchorTag = anchorElement && anchorElement.tagName ? anchorElement.tagName.toLowerCase() : '';
+            state.group.diagnostics = buildGroupDiagnostics(localState.selectedElement, anchorElement, [], { diagnostics: [] }, { diagnostics: [] });
+            state.group.statusText = anchorElement ? '已找到组锚点，但未推断到稳定的相似元素组' : '未找到稳定的组锚点，无法生成元素组';
+            syncTopUI();
+            return;
+        }
+        updateGroupStateFromElements(matches, localState.selectedElement, anchorElement || matches[0], `已在当前上下文中捕获 ${matches.length} 个相似元素`);
+        state.activeTab = 'group';
+        syncTopUI();
+    }
+
+    function removeGroupItem(index) {
+        const current = state.group.items || [];
+        if (index < 0 || index >= current.length) {
+            return;
+        }
+        const next = current.filter((_, idx) => idx !== index);
+        state.group.items = next;
+        const hydrated = hydrateGroupElementsFromItems(next);
+        if (hydrated.length >= 2) {
+            const xpathResult = buildCommonGroupXPathResult(hydrated);
+            const cssResult = buildCommonGroupCssResult(hydrated);
+            state.group.commonXPath = xpathResult.value;
+            state.group.commonCss = cssResult.value;
+            state.group.diagnostics = buildGroupDiagnostics(
+                localState.selectedElement,
+                hydrated[0],
+                hydrated,
+                xpathResult,
+                cssResult,
+            ).concat({
+                kind: 'meta',
+                strategy: 'manual removal',
+                selector: `removed index ${index + 1}`,
+                count: next.length,
+                exact: true,
+            });
+        } else {
+            state.group.commonXPath = '';
+            state.group.commonCss = '';
+            state.group.diagnostics = (state.group.diagnostics || []).concat({
+                kind: 'meta',
+                strategy: 'manual removal',
+                selector: `removed index ${index + 1}`,
+                count: next.length,
+                exact: false,
+            });
+        }
+        state.group.statusText = next.length >= 2
+            ? `已移除 1 项，当前组剩余 ${next.length} 个元素`
+            : '当前元素组不足 2 个元素，已无法生成稳定组 XPath';
+        setOverlayRects('group', next.map((item) => ({
+            left: item.topViewportLeft,
+            top: item.topViewportTop,
+            width: item.width,
+            height: item.height,
+        })));
+        syncTopUI();
+    }
+
+    function clearGroupCapture() {
+        clearGroupState();
+        syncTopUI();
+    }
+
+    function buildGroupCode(group) {
+        const items = group && Array.isArray(group.items) ? group.items : [];
+        if (!items.length) {
+            return '# 先锁定一个元素，再点击“捕获相似元素”';
+        }
+        if (!group.commonXPath) {
+            if (group.commonCss) {
+                return [
+                    '# 已捕获相似元素，当前改用 CSS 组定位',
+                    `items = page.eles(${quotePy(group.commonCss)})`,
+                    'for item in items:',
+                    '    print(item.text)',
+                ].join('\n');
+            }
+            return `# 已捕获 ${items.length} 个相似元素，但未生成稳定组 XPath / CSS`; 
+        }
+        const framePath = items[0].framePath || [];
+        const shadowPath = items[0].shadowPath || [];
+        const lines = [];
+        let currentVar = 'page';
+        lines.push('# ruyiPage generated group snippet');
+        framePath.forEach((frameName, index) => {
+            const frameVar = `frame${index + 1}`;
+            const selector = frameName && frameName !== 'iframe' ? `#${frameName}` : `index=${index}`;
+            if (selector.startsWith('#')) {
+                lines.push(`${frameVar} = ${currentVar}.get_frame(${quotePy(selector)})`);
+            } else {
+                lines.push(`${frameVar} = ${currentVar}.get_frame(${selector})`);
+            }
+            currentVar = frameVar;
+        });
+        shadowPath.forEach((shadow, index) => {
+            const hostVar = `shadow_host${index + 1}`;
+            const rootVar = `shadow_root${index + 1}`;
+            lines.push(`${hostVar} = ${currentVar}.ele(${quotePy(shadow.selector || '')})`);
+            lines.push(`${rootVar} = ${hostVar}.${shadow.mode === 'closed' ? 'closed_shadow_root' : 'shadow_root'}`);
+            currentVar = rootVar;
+        });
+        lines.push(`items = ${currentVar}.eles(${quotePy('xpath:' + group.commonXPath)})`);
+        lines.push('for item in items:');
+        lines.push('    print(item.text)');
+        return lines.join('\n');
+    }
+
+    function renderGroupTab() {
+        const items = state.group.items || [];
+        const diagnostics = state.group.diagnostics || [];
+        const code = buildGroupCode(state.group);
+        const safeCode = escapeHtml(code);
+        const comparisonRows = items.map((item, index) => `
+            <div class="ruyi-xpath-picker__compare-item">
+                <div class="ruyi-xpath-picker__compare-title">${index + 1}. ${escapeHtml(item.name || item.tag || 'element')}</div>
+                <div class="ruyi-xpath-picker__hint">Relative XPath</div>
+                <div class="ruyi-xpath-picker__value" data-code="true">${escapeHtml(item.relativeXPath || '-')}</div>
+                <div class="ruyi-xpath-picker__hint">Absolute XPath</div>
+                <div class="ruyi-xpath-picker__value" data-code="true">${escapeHtml(item.absoluteXPath || '-')}</div>
+                <div class="ruyi-xpath-picker__hint">CSS Selector</div>
+                <div class="ruyi-xpath-picker__value" data-code="true">${escapeHtml(item.cssSelector || '-')}</div>
+            </div>
+        `).join('');
+        const diagnosticRows = diagnostics.map((item) => `
+            <div class="ruyi-xpath-picker__compare-item">
+                <div class="ruyi-xpath-picker__compare-title">${escapeHtml(item.kind === 'meta' ? item.strategy : `${item.kind.toUpperCase()} / ${item.strategy}`)}</div>
+                <div class="ruyi-xpath-picker__hint">${item.exact ? 'exact match' : 'not exact'}</div>
+                <div class="ruyi-xpath-picker__value" data-code="true">${escapeHtml(item.selector || '-')}</div>
+                <div class="ruyi-xpath-picker__hint">命中 ${Number.isFinite(item.count) ? item.count : 0} 个元素</div>
+            </div>
+        `).join('');
+        return `
+            <section class="ruyi-xpath-picker__field">
+                <div class="ruyi-xpath-picker__field-header">
+                    <span class="ruyi-xpath-picker__label">Summary</span>
+                    <span class="ruyi-xpath-picker__status-chip" data-tone="${items.length >= 2 ? 'green' : 'blue'}">${items.length} items</span>
+                </div>
+                <div class="ruyi-xpath-picker__value">${escapeHtml(state.group.statusText || (items.length ? '已生成元素组结果' : '先锁定一个元素，再点击“捕获相似元素”'))}</div>
+                <div class="ruyi-xpath-picker__hint">当前元素组仅在当前 document / frame / shadow 上下文内推断，并会结合每个元素已有的 XPath/CSS 做归纳收敛。</div>
+            </section>
+            <section class="ruyi-xpath-picker__field">
+                <div class="ruyi-xpath-picker__field-header">
+                    <span class="ruyi-xpath-picker__label">Group Anchor</span>
+                </div>
+                <div class="ruyi-xpath-picker__value">${escapeHtml(state.group.anchorName || '未解析到组锚点')}</div>
+                <div class="ruyi-xpath-picker__hint">最终组定位基于锚点收敛到的组元素，而不是原始点击的子节点。</div>
+            </section>
+            <section class="ruyi-xpath-picker__field">
+                <div class="ruyi-xpath-picker__field-header">
+                    <span class="ruyi-xpath-picker__label">Common XPath</span>
+                    ${state.group.commonXPath ? `<button type="button" class="ruyi-xpath-picker__copy" data-copy-label="复制组XPath" data-copy-value="${escapeHtml(String(state.group.commonXPath)).replace(/"/g, '&quot;')}">复制组XPath</button>` : ''}
+                </div>
+                <div class="ruyi-xpath-picker__value" data-code="true">${state.group.commonXPath ? escapeHtml(state.group.commonXPath) : '未生成稳定组 XPath'}</div>
+            </section>
+            <section class="ruyi-xpath-picker__field">
+                <div class="ruyi-xpath-picker__field-header">
+                    <span class="ruyi-xpath-picker__label">Common CSS</span>
+                    ${state.group.commonCss ? `<button type="button" class="ruyi-xpath-picker__copy" data-copy-label="复制组CSS" data-copy-value="${escapeHtml(String(state.group.commonCss)).replace(/"/g, '&quot;')}">复制组CSS</button>` : ''}
+                </div>
+                <div class="ruyi-xpath-picker__value" data-code="true">${state.group.commonCss ? escapeHtml(state.group.commonCss) : '未生成稳定组 CSS'}</div>
+            </section>
+            <section class="ruyi-xpath-picker__field">
+                <div class="ruyi-xpath-picker__field-header">
+                    <span class="ruyi-xpath-picker__label">Batch Code</span>
+                    <button type="button" class="ruyi-xpath-picker__copy" data-copy-label="复制代码" data-copy-value="${escapeHtml(code).replace(/"/g, '&quot;')}">复制代码</button>
+                </div>
+                <div class="ruyi-xpath-picker__code-block">${safeCode}</div>
+            </section>
+            <section class="ruyi-xpath-picker__field">
+                <div class="ruyi-xpath-picker__field-header">
+                    <span class="ruyi-xpath-picker__label">Diagnostics</span>
+                </div>
+                <div class="ruyi-xpath-picker__compare-list">
+                    ${diagnosticRows || '<div class="ruyi-xpath-picker__hint">当前没有可展示的诊断信息。</div>'}
+                </div>
+            </section>
+            <section class="ruyi-xpath-picker__field">
+                <div class="ruyi-xpath-picker__field-header">
+                    <span class="ruyi-xpath-picker__label">逐项定位对照</span>
+                </div>
+                <div class="ruyi-xpath-picker__compare-list">
+                    ${comparisonRows || '<div class="ruyi-xpath-picker__hint">当前没有可对照的组元素。</div>'}
+                </div>
+            </section>
+            <section class="ruyi-xpath-picker__field">
+                <div class="ruyi-xpath-picker__field-header">
+                    <span class="ruyi-xpath-picker__label">Group Items</span>
+                    ${items.length ? `<button type="button" class="ruyi-xpath-picker__copy" data-clear-group="true">清除组</button>` : ''}
+                </div>
+                <div class="ruyi-xpath-picker__group-list">
+                    ${items.length ? items.map((item, index) => `
+                        <div class="ruyi-xpath-picker__group-item">
+                            <div class="ruyi-xpath-picker__group-item-main">
+                                <div class="ruyi-xpath-picker__group-item-title">${index + 1}. ${escapeHtml(item.name || item.tag || 'element')}</div>
+                                <div class="ruyi-xpath-picker__group-item-sub">${escapeHtml(item.text || item.relativeXPath || item.absoluteXPath || '-')}</div>
+                            </div>
+                            <button type="button" class="ruyi-xpath-picker__remove" data-remove-group-index="${index}">移除</button>
+                        </div>
+                    `).join('') : '<div class="ruyi-xpath-picker__hint">当前没有元素组结果。</div>'}
+                </div>
+            </section>
+        `;
     }
 
     function getHostSelector(host) {
@@ -1335,9 +2902,12 @@ class FirefoxBase(BasePage):
         const primarySelector = data.relativeXPath || data.absoluteXPath || '';
         if (primarySelector) {
             lines.push(`target = ${currentVar}.ele(${quotePy('xpath:' + primarySelector)})`);
+            if (data.cssSelector) {
+                lines.push(`# CSS 备选: ${data.cssSelector}`);
+            }
         } else {
             lines.push(`# 无法生成 XPath，建议手动补充 selector`);
-            lines.push(`target = ${currentVar}.ele(${quotePy(data.name || data.tag || '')})`);
+            lines.push(`target = ${currentVar}.ele(${quotePy(data.cssSelector || data.name || data.tag || '')})`);
         }
 
         if (data.shadowPath && data.shadowPath.length) {
@@ -1380,6 +2950,7 @@ class FirefoxBase(BasePage):
         const status = panel.querySelector('[data-role="status"]');
         const unlockButton = panel.querySelector('[data-action="unlock"]');
         const pauseButton = panel.querySelector('[data-action="pause"]');
+        const captureGroupButton = panel.querySelector('[data-action="capture-group"]');
         const toggleButtons = panel.querySelectorAll('[data-action="toggle"]');
         const tabs = panel.querySelectorAll('[data-tab]');
         panel.setAttribute('data-collapsed', state.collapsed ? 'true' : 'false');
@@ -1397,12 +2968,16 @@ class FirefoxBase(BasePage):
         status.textContent = getStatusText();
         unlockButton.disabled = state.mode !== 'locked';
         pauseButton.textContent = state.mode === 'paused' ? '恢复选择' : '暂停选择';
+        if (captureGroupButton) {
+            captureGroupButton.disabled = state.mode !== 'locked';
+        }
 
         if (!data) {
             intro.textContent = state.mode === 'paused'
                 ? '当前已暂停选择，点击“恢复选择”后可继续检查页面元素。'
                 : '移动鼠标可预览目标，点击页面元素后会锁定当前结果。';
             meta.innerHTML = '';
+            syncAuxOverlay();
             return;
         }
 
@@ -1412,30 +2987,28 @@ class FirefoxBase(BasePage):
                 ? '当前已暂停选择，保留最近一次锁定结果。'
                 : '当前为预览态，点击元素后会锁定此结果。';
 
-        if (state.activeTab === 'ruyipage') {
-            const rawCode = buildRuyiPageCode(data);
-            const code = rawCode
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-            meta.innerHTML = `
-                <section class="ruyi-xpath-picker__field">
-                    <div class="ruyi-xpath-picker__field-header">
-                        <span class="ruyi-xpath-picker__label">ruyiPage代码生成</span>
-                        <button type="button" class="ruyi-xpath-picker__copy" data-copy-label="复制代码" data-copy-value="${rawCode.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')}">复制代码</button>
-                    </div>
-                    <div class="ruyi-xpath-picker__code-block">${code}</div>
-                </section>
-            `;
+        if (state.activeTab === 'group') {
+            meta.innerHTML = renderGroupTab();
+            syncAuxOverlay();
             return;
         }
 
+        const validationMap = {
+            'XPath (absolute)': state.validation.absolute,
+            'XPath (relative)': state.validation.relative,
+        };
+        const rawCode = buildRuyiPageCode(data);
+        const code = rawCode
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
         const fields = [
             ['Tag', data.tag || '-'],
             ['Name', data.name || '-'],
             ['Text', data.text || '-'],
             ['XPath (absolute)', data.absoluteXPath || '-', true, !!data.absoluteXPath, '复制绝对XPath'],
             ['XPath (relative)', data.relativeXPath || '-', true, !!data.relativeXPath, '复制相对XPath'],
+            ['CSS', data.cssSelector || '-', true, !!data.cssSelector, '复制CSS'],
             ['Center', `(${data.centerX}, ${data.centerY})`],
             ['Context', data.context || '-'],
         ];
@@ -1444,20 +3017,35 @@ class FirefoxBase(BasePage):
             <section class="ruyi-xpath-picker__field">
                 <div class="ruyi-xpath-picker__field-header">
                     <span class="ruyi-xpath-picker__label">${label}</span>
-                    ${canCopy ? `<button type="button" class="ruyi-xpath-picker__copy" data-copy-label="${copyLabel}" data-copy-value="${String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')}">${copyLabel}</button>` : ''}
+                    <span class="ruyi-xpath-picker__inline-actions">
+                        ${canCopy ? `<button type="button" class="ruyi-xpath-picker__copy" data-copy-label="${copyLabel}" data-copy-value="${String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')}">${copyLabel}</button>` : ''}
+                        ${state.mode === 'locked' && (label === 'XPath (absolute)' || label === 'XPath (relative)') && value && value !== '-' ? `<button type="button" class="ruyi-xpath-picker__copy" data-validate-kind="${label === 'XPath (absolute)' ? 'absolute' : 'relative'}">校验</button>` : ''}
+                    </span>
                 </div>
                 <div class="ruyi-xpath-picker__value"${isCode ? ' data-code="true"' : ''}>${String(value)
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;')}</div>
+                ${validationMap[label] ? `<div class="ruyi-xpath-picker__status-row"><span class="ruyi-xpath-picker__status-chip" data-tone="${validationMap[label].tone}">${validationMap[label].status}</span><span class="ruyi-xpath-picker__hint">${String(validationMap[label].message || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span></div>` : ''}
             </section>
-        `).join('');
+        `).join('') + `
+            <section class="ruyi-xpath-picker__field">
+                <div class="ruyi-xpath-picker__field-header">
+                    <span class="ruyi-xpath-picker__label">ruyiPage代码生成</span>
+                    <button type="button" class="ruyi-xpath-picker__copy" data-copy-label="复制代码" data-copy-value="${rawCode.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')}">复制代码</button>
+                </div>
+                <div class="ruyi-xpath-picker__code-block">${code}</div>
+            </section>
+        `;
+        syncAuxOverlay();
     }
 
     function unlockSelection() {
         state.mode = 'idle';
         state.selectedData = null;
         state.hoverData = null;
+        clearValidationState();
+        clearGroupState();
         localState.selectedElement = null;
         localState.hoverElement = null;
         if (localState.highlight) {
@@ -1516,6 +3104,8 @@ class FirefoxBase(BasePage):
         if (typeof event.stopImmediatePropagation === 'function') {
             event.stopImmediatePropagation();
         }
+        clearValidationState();
+        clearGroupState();
         localState.selectedElement = target;
         state.selectedData = collectElementData(target);
         state.mode = 'locked';
@@ -1524,6 +3114,7 @@ class FirefoxBase(BasePage):
     }
 
     function handleViewportChange() {
+        syncAuxOverlay();
         if (state.mode === 'locked' && localState.selectedElement && document.documentElement.contains(localState.selectedElement)) {
             updateHighlight(localState.selectedElement);
             syncTopUI();
