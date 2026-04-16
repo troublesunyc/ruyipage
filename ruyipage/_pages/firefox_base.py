@@ -4333,24 +4333,66 @@ class FirefoxBase(BasePage):
             result = [c for c in result if c.domain == domain]
         return result
 
-    def set_cookies(self, cookies) -> None:
+    def set_cookies(self, cookies, domain=None, path=None) -> None:
         """设置 Cookie
 
         Args:
-            cookies: Cookie 字典或字典列表
+            cookies: Cookie 字典、字典列表，或浏览器复制出的 Cookie 字符串
                 {'name': 'x', 'value': 'y', 'domain': '.example.com'}
+                'a=1; b=2'
+            domain: 传 Cookie 字符串时可显式指定域名
+            path: 传 Cookie 字符串时可显式指定路径
         """
         from .._bidi import storage as bidi_storage
+        from .._functions.cookies import cookie_str_to_list
+
+        current_domain = ""
+        current_url = self.url
+        if current_url.startswith(("http://", "https://")):
+            from urllib.parse import urlparse
+
+            current_domain = urlparse(current_url).hostname or ""
+
+        if isinstance(cookies, str):
+            cookies = cookie_str_to_list(cookies)
+            default_domain = domain or current_domain
+            for cookie in cookies:
+                if default_domain:
+                    cookie.setdefault("domain", default_domain)
+                if path:
+                    cookie.setdefault("path", path)
 
         if isinstance(cookies, dict):
             cookies = [cookies]
 
         for cookie in cookies:
+            raw_value = cookie.get("value", "")
+            if isinstance(raw_value, dict):
+                # 已经是 BiDi 格式 {"type": "string", "value": "..."}，直接使用
+                bidi_value = raw_value
+            else:
+                bidi_value = {"type": "string", "value": str(raw_value)}
+
             bidi_cookie = {
                 "name": cookie.get("name", ""),
-                "value": {"type": "string", "value": str(cookie.get("value", ""))},
+                "value": bidi_value,
                 "domain": cookie.get("domain", ""),
             }
+
+            cookie_domain = str(cookie.get("domain", "") or "").lstrip(".").lower()
+            normalized_current = current_domain.lstrip(".").lower()
+            use_context_partition = bool(self._context_id)
+
+            # W3C BiDi 的 context partition 绑定当前浏览上下文的存储分区。
+            # 如果当前页面还是 about:blank，或要写入的 cookie 域与当前域不匹配，
+            # 把 cookie 绑定到当前 context 分区会导致跨站登录 cookie 无法真正落地。
+            if not normalized_current or not cookie_domain:
+                use_context_partition = False
+            elif not (
+                normalized_current == cookie_domain
+                or normalized_current.endswith("." + cookie_domain)
+            ):
+                use_context_partition = False
 
             # 可选字段
             for key in ("path", "httpOnly", "secure", "sameSite", "expiry"):
@@ -4359,13 +4401,16 @@ class FirefoxBase(BasePage):
                     bidi_cookie[key] = cookie[py_key]
 
             try:
-                bidi_storage.set_cookie(
-                    self._driver._browser_driver,
-                    bidi_cookie,
-                    partition={"context": self._context_id},
-                )
+                if use_context_partition:
+                    bidi_storage.set_cookie(
+                        self._driver._browser_driver,
+                        bidi_cookie,
+                        partition={"context": self._context_id},
+                    )
+                else:
+                    bidi_storage.set_cookie(self._driver._browser_driver, bidi_cookie)
             except Exception:
-                # 某些 Firefox 版本不支持 partition 参数
+                # 某些 Firefox 版本不支持 partition 参数，或当前 context 分区不适用于跨站 cookie
                 bidi_storage.set_cookie(self._driver._browser_driver, bidi_cookie)
 
     def delete_cookies(self, name=None, domain=None) -> None:

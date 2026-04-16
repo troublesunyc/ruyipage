@@ -862,6 +862,10 @@ cookies = page.get_cookies_filtered(name="session_id", all_info=True)
 
 ### 设置 Cookie
 
+`page.set_cookies()` 支持直接回放 `browser.cookies(all_info=True)` 返回的完整 Cookie，
+并会在当前浏览上下文与 Cookie 域不匹配时自动避免错误的 BiDi context partition，
+以保证跨站登录 Cookie 能正确落地。
+
 ```python
 page.set_cookies({
     "name": "token",
