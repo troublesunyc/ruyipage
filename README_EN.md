@@ -382,6 +382,36 @@ To view the full local demo directly, run:
 python examples/42_2_action_visual_showcase.py
 ```
 
+If you specifically want to demonstrate `human_move()` / `human_click()` and visually compare
+the two human cursor algorithms (`bezier` / `windmouse`), run:
+
+```bash
+python examples/46_human_behavior_showcase.py
+```
+
+This example will:
+
+- open a dedicated local HTML showcase page
+- enable `action_visual=True` so mouse trails are visible on screen
+- demonstrate both `bezier` and `windmouse` cursor movement
+- also show the effect of `human_type()`
+
+Related API:
+
+```python
+opts.set_human_algorithm("windmouse")
+
+page.actions.human_move(ele, algorithm="bezier", style="arc").perform()
+page.actions.human_move(ele, algorithm="windmouse").perform()
+page.actions.human_click(ele, algorithm="windmouse").perform()
+```
+
+Notes:
+
+- `algorithm` can be `"bezier"` or `"windmouse"`
+- `style` only applies to `bezier`
+- if `algorithm` is omitted, `FirefoxOptions.set_human_algorithm()` provides the default
+
 That example uses a dedicated local mouse-only demo page and showcases:
 
 - BiDi mouse trails
@@ -1428,6 +1458,7 @@ Suggested order:
 - `36_native_bidi_select.py`
 - `39_attach_exist_browser.py` auto-detect an attachable instance, then take over the already-open Firefox / fingerprint browser
 - `42_xpath_picker_complex_showcase.py` starts XPath picker and opens a showcase page with complex nodes, shadow roots, and nested iframes
+- `46_human_behavior_showcase.py` demonstrates both bezier and windmouse human cursor algorithms with action visualization enabled
 
 ---
 

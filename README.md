@@ -384,6 +384,36 @@ page.get('https://www.example.com')
 python examples/42_2_action_visual_showcase.py
 ```
 
+如果你想专门演示 `human_move()` / `human_click()` 的拟人轨迹，并同时观察
+两套算法（`bezier` / `windmouse`）的鼠标路径差异，可以运行：
+
+```bash
+python examples/46_human_behavior_showcase.py
+```
+
+这个示例会：
+
+- 自动打开专门的本地 HTML 演示页
+- 开启 `action_visual=True`，直接显示鼠标轨迹
+- 依次演示 `bezier` 和 `windmouse` 两套拟人轨迹算法
+- 再演示 `human_type()` 的拟人输入效果
+
+相关接口：
+
+```python
+opts.set_human_algorithm("windmouse")
+
+page.actions.human_move(ele, algorithm="bezier", style="arc").perform()
+page.actions.human_move(ele, algorithm="windmouse").perform()
+page.actions.human_click(ele, algorithm="windmouse").perform()
+```
+
+说明：
+
+- `algorithm` 可选 `"bezier"` 或 `"windmouse"`
+- `style` 仅对 `bezier` 生效
+- 如果不传 `algorithm`，会优先使用 `FirefoxOptions.set_human_algorithm()` 的默认值
+
 该示例会使用专门的本地鼠标演示页，集中展示：
 
 - BiDi 鼠标轨迹
@@ -1469,6 +1499,7 @@ page.extensions.uninstall(ext_id)
 - `36_native_bidi_select.py`
 - `39_attach_exist_browser.py` 自动探测可接管实例，再接管已打开的 Firefox/指纹浏览器
 - `42_xpath_picker_complex_showcase.py` 启动 XPath picker，并打开包含复杂节点、shadow root、嵌套 iframe 的综合展示页
+- `46_human_behavior_showcase.py` 演示 bezier / windmouse 两套拟人轨迹算法，并开启鼠标行为可视化
 
 ---
 
