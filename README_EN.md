@@ -54,12 +54,16 @@ If this project helps you, you are welcome to buy me a coffee and support contin
 
 ## Companion Projects
 
-If you plan to use `ruyiPage` for AI-driven automation analysis, advanced web data capture, or high-risk browser workflows, start with these two companion projects:
+If you plan to use `ruyiPage` for AI-driven automation analysis, advanced web data capture, or high-risk browser workflows, start with these companion resources:
 
-- **AI automation analysis runtime skill**
+- 📘 **Documentation / Automation Docs**
+  A central place for `ruyiPage` automation guidance, integration notes, and supporting project documentation: <https://0xshoulderlab.site/automation>
+- 🤖 **AI automation analysis runtime skill**
   A practical entry point for AI-assisted workflows and runtime guidance around `ruyiPage`, useful when you want to plug it into an analysis or automation pipeline: <https://github.com/LoseNine/ruyipage-skill?tab=readme-ov-file>
-- **Firefox fingerprint browser project**
+- 🦊 **Firefox fingerprint browser project**
   Intended for cases where you need a Firefox fingerprint environment, browser takeover, or more realistic automation behavior alongside `ruyiPage`: <https://github.com/LoseNine/firefox-fingerprintBrowser>
+- 🐹 **Go implementation: ruyipage-go**
+  A community-maintained Go implementation for teams that want to integrate Firefox automation capabilities into Go projects. Thanks to @pll177 for the implementation and maintenance: <https://github.com/pll177/ruyipage-go>
 
 ---
 

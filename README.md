@@ -56,11 +56,13 @@
 
 如果你准备把 `ruyiPage` 用在 AI 自动化分析、复杂网页采集或高风控页面场景，建议先看这些配套项目：
 
-- **AI 自动化分析运行 Skill**
+- 📘 **官方文档 / 自动化文档**
+  更系统地查看 `ruyiPage` 相关自动化说明、接入方式和配套能力说明：<https://0xshoulderlab.site/automation>
+- 🤖 **AI 自动化分析运行 Skill**
   面向 AI 协作和自动化分析场景的运行说明与实践入口，适合先了解如何把 `ruyiPage` 接进你的工作流：<https://github.com/LoseNine/ruyipage-skill?tab=readme-ov-file>
-- **Firefox 指纹浏览器项目**
+- 🦊 **Firefox 指纹浏览器项目**
   用于需要 Firefox 指纹环境、浏览器接管或更高真实度自动化场景，适合和 `ruyiPage` 搭配使用：<https://github.com/LoseNine/firefox-fingerprintBrowser>
-- **Go 语言实现：ruyipage-go**
+- 🐹 **Go 语言实现：ruyipage-go**
   由社区实现的 Go 版本，适合需要在 Go 项目中接入 Firefox 自动化能力的场景。感谢 @pll177 的实现与维护：<https://github.com/pll177/ruyipage-go>
 
 ---
